@@ -247,6 +247,7 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
 
   const [activePanel, setActivePanel] = useState<"editor" | "preview">("editor");
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const wordCount = markdown.trim().split(/\s+/).filter(Boolean).length;
   const characterCount = markdown.length;
@@ -258,13 +259,26 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
       return;
     }
 
-    await navigator.clipboard.writeText(markdown);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopyFailed(false);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 1800);
+    }
   }
 
   return (
-    <main className="flex h-svh min-h-svh min-w-0 flex-col overflow-hidden bg-surface text-ink">
+    <main id="main-content" className="flex h-svh min-h-svh min-w-0 flex-col overflow-hidden bg-surface text-ink">
+      <a
+        href="#markdown-input"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2"
+      >
+        Skip to editor
+      </a>
       <header className="shrink-0 border-b border-hairline-soft bg-canvas px-4 py-3 sm:px-6">
         <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
@@ -272,11 +286,18 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
             <p className="text-xs font-medium text-steel">Clean writing input with rich rendered output.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:justify-end">
-            <div className="grid grid-cols-2 rounded-lg border border-hairline bg-surface-soft p-1 md:hidden">
+            <div
+              className="grid grid-cols-2 rounded-lg border border-hairline bg-surface-soft p-1 md:hidden"
+              role="tablist"
+              aria-label="Editor and preview panels"
+            >
               <button
                 type="button"
                 onClick={() => setActivePanel("editor")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                role="tab"
+                aria-controls="editor-panel"
+                aria-selected={activePanel === "editor"}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 ${
                   activePanel === "editor" ? "bg-white text-ink shadow-sm" : "text-steel hover:text-ink"
                 }`}
               >
@@ -285,14 +306,17 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
               <button
                 type="button"
                 onClick={() => setActivePanel("preview")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                role="tab"
+                aria-controls="preview-panel"
+                aria-selected={activePanel === "preview"}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 ${
                   activePanel === "preview" ? "bg-white text-ink shadow-sm" : "text-steel hover:text-ink"
                 }`}
               >
                 Preview
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-steel">
+            <div id="document-stats" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-steel">
               <span>{wordCount.toLocaleString()} words</span>
               <span>{lineCount.toLocaleString()} lines</span>
               <span>{characterCount.toLocaleString()} chars</span>
@@ -303,13 +327,20 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
 
       <div className="mx-auto grid min-h-0 w-full max-w-[96rem] flex-1 gap-4 overflow-hidden p-3 sm:p-4 md:grid-cols-[minmax(18rem,0.95fr)_minmax(0,1.05fr)] md:p-6">
         <section
+          id="editor-panel"
+          aria-labelledby="editor-heading"
           className={`min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-hairline bg-canvas shadow-sm md:flex ${
             activePanel === "editor" ? "flex" : "hidden"
           }`}
         >
           <div className="flex items-center justify-between gap-3 border-b border-hairline-soft bg-white px-4 py-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-steel">Markdown Input</h2>
+            <h2 id="editor-heading" className="text-xs font-bold uppercase tracking-wider text-steel">
+              Markdown Input
+            </h2>
             <div className="flex items-center gap-1.5">
+              <span className="sr-only" aria-live="polite">
+                {copied ? "Markdown copied." : copyFailed ? "Could not copy markdown." : ""}
+              </span>
               <button
                 type="button"
                 onClick={copyMarkdown}
@@ -332,28 +363,37 @@ This demonstrates how the rich text engine handles **bold text**, *italic text*,
               </button>
             </div>
           </div>
-          <textarea
+        <textarea
+          id="markdown-input"
             className="internal-scroll min-h-0 flex-1 resize-none bg-canvas p-4 font-mono text-sm leading-7 text-charcoal outline-none transition focus:bg-white sm:p-5"
             value={markdown}
             onChange={(e) => setMarkdown(e.target.value)}
             placeholder="Start typing markdown..."
             aria-label="Markdown input"
+            aria-describedby="document-stats"
             spellCheck={false}
           />
         </section>
 
         <section
+          id="preview-panel"
+          aria-labelledby="preview-heading"
           className={`min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-hairline bg-canvas shadow-sm md:flex ${
             activePanel === "preview" ? "flex" : "hidden"
           }`}
         >
           <div className="sticky top-0 z-10 border-b border-hairline-soft bg-white/95 px-4 py-3 backdrop-blur">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-steel">Rich Text Output</h2>
+            <h2 id="preview-heading" className="text-xs font-bold uppercase tracking-wider text-steel">
+              Rich Text Output
+            </h2>
           </div>
           <div className="internal-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 md:px-7 lg:px-8">
             <div className="mx-auto min-w-0 max-w-3xl">
               {isEmpty ? (
-                <div className="flex min-h-[18rem] items-center justify-center rounded-lg border border-dashed border-hairline bg-surface/60 px-6 py-10 text-center">
+                <div
+                  className="flex min-h-[18rem] items-center justify-center rounded-lg border border-dashed border-hairline bg-surface/60 px-6 py-10 text-center"
+                  role="status"
+                >
                   <div className="max-w-sm">
                     <p className="text-sm font-bold text-ink">Preview is waiting for markdown</p>
                     <p className="mt-2 text-sm leading-6 text-steel">

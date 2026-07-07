@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 export default function RichCodeBlock({
   language,
@@ -14,6 +14,7 @@ export default function RichCodeBlock({
 }) {
   const [copied, setCopied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -44,10 +45,10 @@ export default function RichCodeBlock({
         <AnimatePresence>
           {(isHovered || copied) && (
             <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              whileTap={{ scale: 0.95 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.9 }}
+              animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+              exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.9 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               onClick={handleCopy}
               className="flex shrink-0 items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-xs font-bold text-slate shadow-sm ring-1 ring-black/5 transition-colors hover:text-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/35"
             >
@@ -55,9 +56,9 @@ export default function RichCodeBlock({
                 {copied ? (
                   <motion.div
                     key="copied"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
+                    initial={shouldReduceMotion ? false : { scale: 0.8, opacity: 0 }}
+                    animate={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
+                    exit={shouldReduceMotion ? undefined : { scale: 0.8, opacity: 0 }}
                     className="flex items-center gap-1 text-brand-blue"
                   >
                     <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -68,9 +69,9 @@ export default function RichCodeBlock({
                 ) : (
                   <motion.div
                     key="copy"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
+                    initial={shouldReduceMotion ? false : { scale: 0.8, opacity: 0 }}
+                    animate={shouldReduceMotion ? undefined : { scale: 1, opacity: 1 }}
+                    exit={shouldReduceMotion ? undefined : { scale: 0.8, opacity: 0 }}
                     className="flex items-center gap-1"
                   >
                     <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

@@ -25,7 +25,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 type ChartConfig = {
   type: "bar" | "line" | "pie" | "area" | "radar" | "composed";
@@ -76,6 +76,7 @@ const CustomTooltip = ({
 
 export default function RichChart({ configStr }: { configStr: string }) {
   const chartId = useId();
+  const shouldReduceMotion = useReducedMotion();
   
   const config = useMemo<ChartConfig | null>(() => {
     try {
@@ -90,8 +91,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
   if (!config || !config.data || !config.type) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+        animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
         className="my-6 overflow-hidden rounded-2xl border border-brand-coral/20 bg-brand-coral/10 p-5 text-sm font-bold text-brand-coral shadow-sm"
       >
         <div className="mb-2 font-black uppercase tracking-wider text-brand-coral-deep">⚠ Chart Config Error</div>
@@ -135,7 +136,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
                   dataKey={key}
                   fill={`url(#color-${key}-${chartId})`}
                   radius={[6, 6, 0, 0]}
-                  animationDuration={1500}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 1500}
                   animationEasing="ease-out"
                 />
               ))}
@@ -161,7 +163,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
                   strokeWidth={4}
                   dot={{ r: 4, strokeWidth: 2, fill: "#fff" }}
                   activeDot={{ r: 7, strokeWidth: 0, fill: colors[i % colors.length] }}
-                  animationDuration={2000}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 2000}
                   animationEasing="ease-out"
                 />
               ))}
@@ -195,7 +198,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
                   fillOpacity={1}
                   fill={`url(#colorArea-${key}-${chartId})`}
                   strokeWidth={3}
-                  animationDuration={2000}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 2000}
                   animationEasing="ease-out"
                 />
               ))}
@@ -221,7 +225,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
                   fill={colors[i % colors.length]}
                   fillOpacity={0.5}
                   strokeWidth={2}
-                  animationDuration={2000}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 2000}
                   animationEasing="ease-out"
                 />
               ))}
@@ -250,10 +255,27 @@ export default function RichChart({ configStr }: { configStr: string }) {
                 <Area key={key} type="monotone" dataKey={key} fill="#f3f4f6" stroke="none" />
               ))}
               {(bars || []).map((key) => (
-                <Bar key={key} dataKey={key} fill={`url(#colorBar-${key}-${chartId})`} radius={[4, 4, 0, 0]} barSize={20} animationDuration={1500} />
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  fill={`url(#colorBar-${key}-${chartId})`}
+                  radius={[4, 4, 0, 0]}
+                  barSize={20}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 1500}
+                />
               ))}
               {(lines || []).map((key, i) => (
-                <Line key={key} type="monotone" dataKey={key} stroke={colors[(i + (bars?.length || 0)) % colors.length]} strokeWidth={3} dot={false} animationDuration={2000} />
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={colors[(i + (bars?.length || 0)) % colors.length]}
+                  strokeWidth={3}
+                  dot={false}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationDuration={shouldReduceMotion ? 0 : 2000}
+                />
               ))}
             </ComposedChart>
           </ResponsiveContainer>
@@ -276,7 +298,8 @@ export default function RichChart({ configStr }: { configStr: string }) {
                 innerRadius={60}
                 paddingAngle={5}
                 stroke="none"
-                animationDuration={1500}
+                isAnimationActive={!shouldReduceMotion}
+                animationDuration={shouldReduceMotion ? 0 : 1500}
                 animationEasing="ease-out"
               >
                 {data.map((entry, index) => (
@@ -298,9 +321,9 @@ export default function RichChart({ configStr }: { configStr: string }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
       className="my-6 w-full min-w-0 overflow-hidden rounded-lg border border-hairline bg-white p-3 pb-1 shadow-sm transition-all duration-300 ease-out hover:border-hairline-soft hover:shadow-md sm:p-6 sm:pb-2"
     >
       {title && <h3 className="mb-4 px-2 text-center text-xs font-black uppercase text-ink sm:mb-6 sm:text-[13px]">{title}</h3>}

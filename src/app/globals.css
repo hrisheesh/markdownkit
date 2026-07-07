@@ -67,6 +67,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
+*:focus-visible {
+  outline: 2px solid rgba(20, 86, 240, 0.7);
+  outline-offset: 2px;
+}
+
 textarea {
   scrollbar-width: thin;
 }
@@ -198,4 +203,15 @@ textarea::selection {
 
 .animate-message-in {
   animation: messageIn 240ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

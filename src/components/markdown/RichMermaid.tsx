@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -13,6 +13,7 @@ export default function RichMermaid({ chart }: { chart: string }) {
   const [error, setError] = useState<string>("");
   const [isRendering, setIsRendering] = useState<boolean>(true);
   const renderHostRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   
   // Use React's useId to ensure deterministic SSR/Client IDs without hydration bugs
   // Remove any colons from the ID to keep Mermaid parser happy
@@ -108,9 +109,9 @@ export default function RichMermaid({ chart }: { chart: string }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
         className="internal-scroll my-6 max-h-[70svh] overflow-auto rounded-lg border border-hairline bg-white p-3 shadow-sm transition-all duration-300 ease-out hover:border-hairline-soft hover:shadow-md sm:max-h-[40rem] sm:p-6 [&_svg_path]:transition-all [&_svg_path]:duration-300 hover:[&_svg_.node_rect]:fill-brand-blue/5 hover:[&_svg_.node_rect]:stroke-brand-blue"
     >
       <div ref={renderHostRef} className="absolute -left-[9999px] -top-[9999px] w-[1200px] opacity-0 pointer-events-none" aria-hidden="true" />
