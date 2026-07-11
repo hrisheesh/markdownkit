@@ -1,7 +1,7 @@
 {
-  "name": "@hrisheesh/markdown-render",
+  "name": "markdown-flow",
   "version": "0.1.2",
-  "description": "A polished, interactive Markdown renderer for React and Next.js.",
+  "description": "A polished, interactive Markdown toolkit for React and Next.js.",
   "license": "UNLICENSED",
   "keywords": [
     "markdown",
@@ -13,13 +13,13 @@
     "mermaid",
     "katex"
   ],
-  "homepage": "https://github.com/hrisheesh/markdownrender#readme",
+  "homepage": "https://github.com/hrisheesh/markdown-flow#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hrisheesh/markdownrender.git"
+    "url": "git+https://github.com/hrisheesh/markdown-flow.git"
   },
   "bugs": {
-    "url": "https://github.com/hrisheesh/markdownrender/issues"
+    "url": "https://github.com/hrisheesh/markdown-flow/issues"
   },
   "publishConfig": {
     "access": "public"

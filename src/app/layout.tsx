@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Markdown Renderer",
+  title: "Markdown Flow",
   description: "A clean responsive markdown rendering workspace.",
 };
 

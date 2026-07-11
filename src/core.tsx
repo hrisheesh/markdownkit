@@ -13,9 +13,9 @@ export interface RichMarkdownCoreProps {
 }
 
 /**
- * A lightweight Markdown Render entry point for products that do not need
+ * A lightweight Markdown Flow entry point for products that do not need
  * charts, diagrams, mathematical notation, or interactive rich blocks.
- * Import `@hrisheesh/markdown-render/core.css` once in the consuming application.
+ * Import `markdown-flow/core.css` once in the consuming application.
  */
 export function RichMarkdownCore({ content, components }: RichMarkdownCoreProps) {
   return (

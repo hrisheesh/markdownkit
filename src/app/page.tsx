@@ -5,7 +5,7 @@ import { Check, Copy, Eye, FileText, Trash2 } from "lucide-react";
 import RichMarkdown from "@/components/markdown/RichMarkdown";
 
 export default function MarkdownPlayground() {
-  const [markdown, setMarkdown] = useState<string>(`# Rich Markdown Renderer Test
+  const [markdown, setMarkdown] = useState<string>(`# Markdown Flow playground
 
 ## Structured blocks
 

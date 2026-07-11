@@ -24,8 +24,8 @@ try {
       const assert = require("node:assert/strict");
       const React = require("react");
       const { renderToStaticMarkup } = require("react-dom/server");
-      const { RichMarkdown } = require("@hrisheesh/markdown-render");
-      const { StaticMarkdown } = require("@hrisheesh/markdown-render/server");
+      const { RichMarkdown } = require("markdown-flow");
+      const { StaticMarkdown } = require("markdown-flow/server");
       assert.match(renderToStaticMarkup(React.createElement(RichMarkdown, { content: "# Compatible" })), /Compatible/);
       assert.match(renderToStaticMarkup(React.createElement(StaticMarkdown, { content: "# Server compatible" })), /Server compatible/);
     `);

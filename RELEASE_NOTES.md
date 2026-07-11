@@ -11,7 +11,16 @@ Released 2026-07-12
 - Added render-regression, accessibility-contract, package-size, and React 18/19 consumer compatibility checks.
 - Improved interactive semantics for citations, accordions, tabs, progress indicators, and chart summaries.
 - Added framework-focused examples and documented the supported integration paths.
-- Kept the default import unchanged: `RichMarkdown` remains available from `@hrisheesh/markdown-render`.
+- Published the complete default renderer from the clean unscoped `markdown-flow` import.
+
+### Package rename
+
+`markdown-flow@0.1.2` is the new public package. The previously published `@hrisheesh/markdown-render@0.1.1` remains available for existing users, but new installations should use `markdown-flow`:
+
+```tsx
+import { RichMarkdown } from "markdown-flow";
+import "markdown-flow/styles.css";
+```
 
 ### Performance and package impact
 

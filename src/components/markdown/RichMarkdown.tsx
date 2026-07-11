@@ -139,8 +139,8 @@ export type RichBlockRenderer = (props: RichBlockRendererProps) => ReactNode;
 export type RichBlockRenderers = Readonly<Record<string, RichBlockRenderer | undefined>>;
 
 /**
- * Renders safe Markdown plus Markdown Render's chart, media, and structured blocks.
- * Import `@hrisheesh/markdown-render/styles.css` once in the consuming application.
+ * Renders safe Markdown plus Markdown Flow's chart, media, and structured blocks.
+ * Import `markdown-flow/styles.css` once in the consuming application.
  */
 export default function RichMarkdown({ content, citations, blockRenderers, components }: RichMarkdownProps) {
   return (

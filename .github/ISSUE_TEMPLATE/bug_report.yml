@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Package version
-      description: Include the installed `@hrisheesh/markdown-render` version.
+      description: Include the installed `markdown-flow` version.
       placeholder: 0.1.1
     validations:
       required: true

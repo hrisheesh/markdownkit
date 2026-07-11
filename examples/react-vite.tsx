@@ -1,5 +1,5 @@
-import { RichMarkdown } from "@hrisheesh/markdown-render";
-import "@hrisheesh/markdown-render/styles.css";
+import { RichMarkdown } from "markdown-flow";
+import "markdown-flow/styles.css";
 
 const content = "# Welcome\n\nThis document is rendered in a standard React application.";
 
