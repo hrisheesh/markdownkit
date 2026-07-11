@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -25,6 +25,7 @@ export interface Citation {
 function CitationBadge({ citation }: { citation: Citation }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLSpanElement>(null);
+  const detailsId = React.useId();
 
   React.useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -44,12 +45,15 @@ function CitationBadge({ citation }: { citation: Citation }) {
         onClick={() => setOpen((value) => !value)}
         className="mx-1 inline-flex size-[1.2rem] translate-y-[-1px] items-center justify-center rounded-full bg-ink text-[9px] font-bold text-white transition-colors duration-150 hover:bg-brand-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2"
         title={`Source: ${citation.filename}`}
+        aria-label={`Show source: ${citation.filename}`}
+        aria-expanded={open}
+        aria-controls={detailsId}
       >
         {citation.id.replace(/[\[\]]/g, "")}
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-1/2 z-50 mb-3 w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-hairline bg-white p-3.5 text-left text-xs leading-5 text-charcoal shadow-[0_16px_40px_rgba(23,23,23,0.12)]">
+        <div id={detailsId} role="dialog" aria-label={`Source details: ${citation.filename}`} className="absolute bottom-full left-1/2 z-50 mb-3 w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-hairline bg-white p-3.5 text-left text-xs leading-5 text-charcoal shadow-[0_16px_40px_rgba(23,23,23,0.12)]">
           <div className="mb-1 font-semibold text-ink">{citation.filename}</div>
           {citation.contextual_header && (
             <div className="mb-2 font-semibold text-steel">{citation.contextual_header}</div>
@@ -118,13 +122,27 @@ export interface RichMarkdownProps {
   content: string;
   /** Source references rendered as accessible inline citation badges. */
   citations?: Citation[];
+  /** Explicit renderers for fenced block languages. These receive text-only code after Markdown sanitization. */
+  blockRenderers?: RichBlockRenderers;
+  /** Overrides for standard Markdown HTML elements. Source Markdown remains sanitized before these render. */
+  components?: Components;
 }
+
+export interface RichBlockRendererProps {
+  /** The fenced block language, for example `alert` from a ` ```alert ` block. */
+  language: string;
+  /** Text-only fenced block content. */
+  code: string;
+}
+
+export type RichBlockRenderer = (props: RichBlockRendererProps) => ReactNode;
+export type RichBlockRenderers = Readonly<Record<string, RichBlockRenderer | undefined>>;
 
 /**
  * Renders safe Markdown plus Markdown Render's chart, media, and structured blocks.
  * Import `@hrisheesh/markdown-render/styles.css` once in the consuming application.
  */
-export default function RichMarkdown({ content, citations }: RichMarkdownProps) {
+export default function RichMarkdown({ content, citations, blockRenderers, components }: RichMarkdownProps) {
   return (
     <div className="markdown-render chat-markdown min-w-0 text-[15px] font-normal leading-7 text-charcoal sm:text-[16px] sm:leading-8">
       <ReactMarkdown
@@ -214,6 +232,11 @@ export default function RichMarkdown({ content, citations }: RichMarkdownProps) 
             const language = /language-([\w-]+)/.exec(className || "")?.[1];
             const code = String(children).replace(/\n$/, "");
 
+            const blockRenderer = language ? blockRenderers?.[language] : undefined;
+            if (blockRenderer && language) {
+              return <>{blockRenderer({ language, code })}</>;
+            }
+
             if (language === "mermaid") {
               return <RichMermaid chart={code} />;
             }
@@ -283,6 +306,7 @@ export default function RichMarkdown({ content, citations }: RichMarkdownProps) 
               loading="lazy"
             />
           ),
+          ...components,
         }}
       >
         {content}

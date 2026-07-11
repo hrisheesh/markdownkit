@@ -31,5 +31,14 @@ jobs:
       - name: Build package
         run: npm run build:package
 
+      - name: Run render and accessibility contracts
+        run: npm run test:render
+
+      - name: Enforce package-size budgets
+        run: npm run check:size
+
+      - name: Verify React peer compatibility
+        run: npm run test:compat
+
       - name: Verify publish contents
         run: npm pack --dry-run

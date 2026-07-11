@@ -12,8 +12,10 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#what-it-renders">Formats</a> ·
+  <a href="#whats-new-in-012">What’s new</a> ·
   <a href="#api">API</a> ·
   <a href="#safety-and-content-model">Safety</a> ·
+  <a href="#quality-and-compatibility">Quality</a> ·
   <a href="#playground-and-examples">Playground</a>
 </p>
 
@@ -50,6 +52,21 @@ Markdown is a great writing interface. Markdown Render keeps it that way, then a
 npm install @hrisheesh/markdown-render
 ```
 
+## What’s new in 0.1.2
+
+`0.1.2` makes the package more adaptable and dependable without changing the default integration. Existing applications continue to use the full renderer from the package root:
+
+```tsx
+import { RichMarkdown } from "@hrisheesh/markdown-render";
+```
+
+- **Controlled extension points** — add per-render fenced-block renderers with `blockRenderers`, or override standard Markdown elements through `components`.
+- **More resilient framework paths** — use the optional `@hrisheesh/markdown-render/core` entry for Markdown-only experiences, or `@hrisheesh/markdown-render/server` for static server rendering. These are additive choices; the root renderer remains the complete experience.
+- **Better interactive semantics** — citations, accordions, tabs, progress indicators, and charts now expose clearer accessible labels, state, and relationships.
+- **Release-grade safeguards** — render contracts, React 18/19 packed-package compatibility tests, size budgets, and CI protect the published surface.
+
+See the full [0.1.2 release notes](RELEASE_NOTES.md).
+
 ## Quick start
 
 Import the stylesheet once at your application entry point, then pass Markdown to `RichMarkdown`.
@@ -71,6 +88,19 @@ export function DocumentPreview() {
 }
 ```
 
+### Lean Markdown-only entry
+
+When an experience only needs responsive, sanitized GitHub-flavored Markdown, use the dedicated core entry. It excludes rich blocks, charts, Mermaid, KaTeX, and syntax highlighting from the imported runtime while leaving the default package behavior unchanged.
+
+```tsx
+import { RichMarkdownCore } from "@hrisheesh/markdown-render/core";
+import "@hrisheesh/markdown-render/core.css";
+
+export function Article({ content }: { content: string }) {
+  return <RichMarkdownCore content={content} />;
+}
+```
+
 ### Next.js (App Router)
 
 Import the stylesheet in your root layout and render the interactive component from a Client Component.
@@ -88,6 +118,21 @@ import { RichMarkdown } from "@hrisheesh/markdown-render";
 
 export function DocumentPreview({ content }: { content: string }) {
   return <RichMarkdown content={content} />;
+}
+```
+
+### Server Components and SSR
+
+For non-interactive documents, use the static entry directly in a React Server Component or any server-rendered React application. It supports sanitized GitHub-flavored Markdown and element overrides, but intentionally does not load interactive rich blocks, Mermaid, math, or syntax highlighting.
+
+```tsx
+// app/article/page.tsx — no "use client" needed
+import { StaticMarkdown } from "@hrisheesh/markdown-render/server";
+import "@hrisheesh/markdown-render/core.css";
+
+export default async function ArticlePage() {
+  const content = "# Server-rendered Markdown";
+  return <StaticMarkdown content={content} />;
 }
 ```
 
@@ -162,13 +207,19 @@ The familiar equation $E = mc^2$ works inline, too.
 ## API
 
 ```ts
-import type { Citation, RichMarkdownProps } from "@hrisheesh/markdown-render";
+import type {
+  Citation,
+  RichBlockRenderers,
+  RichMarkdownProps,
+} from "@hrisheesh/markdown-render";
 ```
 
 | Prop | Type | Description |
 | --- | --- | --- |
 | `content` | `string` | Markdown source, including optional rich fenced blocks. |
 | `citations` | `Citation[]` | Optional source references displayed as interactive inline citation badges. |
+| `blockRenderers` | `RichBlockRenderers` | Explicit renderers for named fenced block languages. |
+| `components` | `Components` | Overrides for standard Markdown HTML elements. |
 
 ```tsx
 <RichMarkdown
@@ -185,6 +236,30 @@ import type { Citation, RichMarkdownProps } from "@hrisheesh/markdown-render";
 />
 ```
 
+### Controlled extension points
+
+Register custom fenced blocks per render. There is no global registry, so configurations stay isolated between requests and documents. A renderer receives text-only fenced content after Markdown sanitization; return ordinary React elements and avoid `dangerouslySetInnerHTML` for untrusted content.
+
+```tsx
+import { RichMarkdown, type RichBlockRenderers } from "@hrisheesh/markdown-render";
+
+const blockRenderers: RichBlockRenderers = {
+  alert: ({ code }) => <aside role="note">{code}</aside>,
+};
+
+export function ReleaseNotes({ content }: { content: string }) {
+  return (
+    <RichMarkdown
+      content={content} // ```alert\nScheduled maintenance tonight.\n```
+      blockRenderers={blockRenderers}
+      components={{ h2: ({ children }) => <h2 className="section-title">{children}</h2> }}
+    />
+  );
+}
+```
+
+`components` is also available on `RichMarkdownCore` and `StaticMarkdown`. Overrides are applied after the package defaults, while Markdown source is still sanitized before any override receives it.
+
 ## Styling
 
 The package ships its compiled renderer styles and does not require a Tailwind configuration in your application. Component-specific rules are scoped to `.markdown-render`; import the stylesheet once where global styles are allowed:
@@ -199,10 +274,45 @@ The component is responsive by default. It respects a visitor's `prefers-reduced
 
 The npm tarball intentionally contains only the distributable library, its generated type declarations, compiled styles, and KaTeX fonts required for mathematical notation. It does not ship the Next.js playground, source files, development tooling, or repository-only assets.
 
+## Quality and compatibility
+
+The published package has focused safeguards for the parts most likely to regress in a renderer:
+
+- **Accessibility contracts** cover semantic labels and state for charts, citations, tabs, accordions, and progress indicators.
+- **Render regression checks** verify sanitization, component overrides, custom blocks, core rendering, and the server entry against representative Markdown.
+- **React compatibility** installs the packed tarball in clean React 18 and React 19 consumers, then server-renders both the interactive and static entries.
+- **Package-size budgets** fail when the public JavaScript or CSS entry points grow beyond their approved limits.
+- **CI** runs these checks plus linting and publish-content verification on pull requests and `main` updates.
+
+Run the complete local quality suite after building a change:
+
+```bash
+npm test
+npm run test:compat
+npm pack --dry-run
+```
+
+`test:compat` intentionally performs temporary npm installs for React 18 and React 19. It never changes this repository or publishes a package.
+
+### 0.1.1 → 0.1.2 controlled stress test
+
+The following local release comparison used the published `0.1.1` package and the packed `0.1.2` candidate in the same isolated React 19.2.4 SSR environment. Each timing alternated package order across six rounds to reduce warm-up bias. Results are directional rather than a guarantee for every application.
+
+| Scenario | Workload | 0.1.1 | 0.1.2 | Change |
+| --- | --- | ---: | ---: | ---: |
+| Small Markdown | 3,000 renders × 6 rounds | 6,319 renders/s | 6,641 renders/s | 4.8% faster |
+| Rich blocks | 1,500 renders × 6 rounds | 5,191 renders/s | 5,154 renders/s | 0.7% slower* |
+| Large document | 9,731-character source → 89,104-character HTML | 56.9 renders/s | 60.9 renders/s | 6.6% faster |
+
+\*The rich-block difference is within normal benchmark noise; the default root renderer remains effectively performance-neutral in this comparison.
+
+The additional release safeguards have a deliberately small distribution impact: root ESM is **+1.4 kB**, root CJS is **+1.5 kB**, root CSS is **+348 B**, and the npm tarball is **+17.2 kB (1.9%)**. For consumers that intentionally need only sanitized GitHub-flavored Markdown, the optional `core` entry is about **5.7 kB ESM including its shared chunk**, compared with about **67.7 kB** for the full root entry.
+
 ## Safety and content model
 
 - GitHub-flavored Markdown and mathematical notation are supported.
 - Rendered Markdown is sanitized before output.
+- Custom block renderers receive text-only fenced content; they do not bypass sanitization.
 - Rich block configuration is parsed defensively; malformed configuration degrades gracefully.
 - Link previews are informational cards, not third-party page embeds.
 
@@ -221,21 +331,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to explore, edit, and copy rich-block source.
 
+Small copy-ready starting points are also included in the repository:
+
+- [`examples/react-vite.tsx`](examples/react-vite.tsx) — standard React/Vite client rendering.
+- [`examples/next-app-router.tsx`](examples/next-app-router.tsx) — static Markdown in a Next.js App Router Server Component.
+- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) — package-facing changes and release history.
+
 ## Repository quality
 
-Every pull request and update to `main` verifies linting, library compilation, and the exact contents that npm would publish. The repository also includes focused bug and feature request forms so package feedback arrives with the context needed to act on it.
-
-## Contributing
-
-Keep changes focused, test the corresponding playground state, and run the package checks before opening a pull request:
-
-```bash
-npm run lint
-npm run build:package
-npm pack --dry-run
-```
-
-New rich blocks should be content-first, responsive, keyboard-accessible where interactive, motion-conscious, and resilient to malformed configuration.
+Every pull request and update to `main` verifies linting, library compilation, render contracts, accessibility semantics, React peer compatibility, size budgets, and the exact contents that npm would publish.
 
 ## License
 

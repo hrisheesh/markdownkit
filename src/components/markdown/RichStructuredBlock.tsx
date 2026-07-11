@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import JSON5 from "json5";
 import { Check, ChevronDown, CircleAlert, CircleCheck, File, Folder, Info, Lightbulb, Quote } from "lucide-react";
 
@@ -83,15 +83,17 @@ function Comparison({ config }: { config: StructuredConfig }) {
 function Accordion({ config }: { config: StructuredConfig }) {
   const initialOpen = config.items?.findIndex((item) => item.open) ?? -1;
   const [open, setOpen] = useState<number | null>(initialOpen >= 0 ? initialOpen : null);
+  const accordionId = useId().replace(/:/g, "");
   if (!config.items?.length) return <InvalidBlock />;
-  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Details" /><div className="overflow-hidden rounded-2xl border border-black/[0.08]">{config.items.map((item, index) => { const isOpen = open === index; return <div key={`${item.title}-${index}`} className="border-b border-black/[0.07] last:border-0"><button type="button" onClick={() => setOpen(isOpen ? null : index)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f] transition-colors hover:bg-[#fbfbfd]"><span>{item.title}</span><ChevronDown className={`size-4 shrink-0 text-[#86868b] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} /></button>{isOpen && <div className="px-5 pb-5 text-sm leading-6 text-[#515154]">{item.content || item.description}</div>}</div>; })}</div></section>;
+  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Details" /><div className="overflow-hidden rounded-2xl border border-black/[0.08]">{config.items.map((item, index) => { const isOpen = open === index; const panelId = `${accordionId}-panel-${index}`; return <div key={`${item.title}-${index}`} className="border-b border-black/[0.07] last:border-0"><button type="button" onClick={() => setOpen(isOpen ? null : index)} aria-expanded={isOpen} aria-controls={panelId} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f] transition-colors hover:bg-[#fbfbfd] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#007aff]/45"><span>{item.title}</span><ChevronDown className={`size-4 shrink-0 text-[#86868b] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" /></button>{isOpen && <div id={panelId} role="region" aria-label={item.title} className="px-5 pb-5 text-sm leading-6 text-[#515154]">{item.content || item.description}</div>}</div>; })}</div></section>;
 }
 
 function Tabs({ config }: { config: StructuredConfig }) {
   const [active, setActive] = useState(0);
+  const tabsId = useId().replace(/:/g, "");
   if (!config.tabs?.length) return <InvalidBlock />;
   const selected = config.tabs[Math.min(active, config.tabs.length - 1)];
-  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Explore" /><div className="border-b border-black/[0.08]" role="tablist" aria-label={config.title || "Content tabs"}>{config.tabs.map((tab, index) => <button key={tab.label} type="button" role="tab" aria-selected={active === index} onClick={() => setActive(index)} className={`mr-5 border-b-2 py-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#007aff]/35 ${active === index ? "border-[#007aff] text-[#1d1d1f]" : "border-transparent text-[#86868b] hover:text-[#515154]"}`}>{tab.label}</button>)}</div><div className="pt-5"><h3 className="text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f]">{selected.title || selected.label}</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-[#515154]">{selected.content}</p></div></section>;
+  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Explore" /><div className="border-b border-black/[0.08]" role="tablist" aria-label={config.title || "Content tabs"}>{config.tabs.map((tab, index) => <button key={tab.label} id={`${tabsId}-tab-${index}`} type="button" role="tab" aria-selected={active === index} aria-controls={`${tabsId}-panel-${index}`} tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} className={`mr-5 border-b-2 py-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#007aff]/35 ${active === index ? "border-[#007aff] text-[#1d1d1f]" : "border-transparent text-[#86868b] hover:text-[#515154]"}`}>{tab.label}</button>)}</div><div id={`${tabsId}-panel-${active}`} role="tabpanel" aria-labelledby={`${tabsId}-tab-${active}`} className="pt-5"><h3 className="text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f]">{selected.title || selected.label}</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-[#515154]">{selected.content}</p></div></section>;
 }
 
 function Cards({ config }: { config: StructuredConfig }) {
@@ -106,7 +108,7 @@ function FileTree({ config }: { config: StructuredConfig }) {
 
 function Progress({ config }: { config: StructuredConfig }) {
   if (!config.items?.length) return <InvalidBlock />;
-  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Progress" /><div className="space-y-5">{config.items.map((item, index) => { const total = item.total || 100; const value = Math.min(Math.max(item.value || 0, 0), total); const percentage = Math.round((value / total) * 100); return <div key={`${item.title}-${index}`}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="font-medium text-[#1d1d1f]">{item.title}</span><span className="text-xs text-[#86868b]">{item.meta || `${percentage}%`}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-[#e5e5ea]"><div className="h-full rounded-full bg-[#007aff] transition-[width] duration-500" style={{ width: `${percentage}%` }} /></div>{item.description && <p className="mt-2 text-sm leading-6 text-[#515154]">{item.description}</p>}</div>; })}</div></section>;
+  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Progress" /><div className="space-y-5">{config.items.map((item, index) => { const total = item.total || 100; const value = Math.min(Math.max(item.value || 0, 0), total); const percentage = Math.round((value / total) * 100); return <div key={`${item.title}-${index}`}><div className="mb-2 flex items-center justify-between gap-4 text-sm"><span className="font-medium text-[#1d1d1f]">{item.title}</span><span className="text-xs text-[#86868b]">{item.meta || `${percentage}%`}</span></div><div role="progressbar" aria-label={item.title} aria-valuemin={0} aria-valuemax={total} aria-valuenow={value} className="h-1.5 overflow-hidden rounded-full bg-[#e5e5ea]"><div className="h-full rounded-full bg-[#007aff] transition-[width] duration-500" style={{ width: `${percentage}%` }} /></div>{item.description && <p className="mt-2 text-sm leading-6 text-[#515154]">{item.description}</p>}</div>; })}</div></section>;
 }
 
 function Checklist({ config }: { config: StructuredConfig }) {

@@ -218,7 +218,13 @@ export default function RichChart({ configStr }: { configStr: string }) {
         <div><h3 className="text-[17px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">{title || "Untitled chart"}</h3><p className="mt-1 text-xs text-[#86868b]">{data.length} observations · {type} chart</p></div>
         {series.length > 0 && <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2" aria-label="Chart legend">{series.map((name, index) => <span key={`${name}-${index}`} className="flex items-center gap-1.5 text-xs text-[#6e6e73]"><span className="size-1.5 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />{name}</span>)}</div>}
       </div>
-      <div className={`mt-4 px-1 sm:mt-5 sm:px-2 ${frameClassName}`}>{renderChart()}</div>
+      <div
+        className={`mt-4 px-1 sm:mt-5 sm:px-2 ${frameClassName}`}
+        role="img"
+        aria-label={`${title || "Untitled"} ${type} chart with ${data.length} observations`}
+      >
+        {renderChart()}
+      </div>
     </section>
   );
 }
