@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 
 const require = createRequire(import.meta.url);
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const { RichMarkdown } = require(root);
 const { RichMarkdownCore } = require(`${root}/dist/core.js`);
 const { StaticMarkdown } = require(`${root}/dist/server.js`);

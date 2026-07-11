@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Check, Copy, WrapText } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism/index.js";
+import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function RichCodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false);

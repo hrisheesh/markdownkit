@@ -76,8 +76,10 @@ function Steps({ config }: { config: StructuredConfig }) {
 }
 
 function Comparison({ config }: { config: StructuredConfig }) {
-  if (!config.columns?.length || !config.rows?.length) return <InvalidBlock />;
-  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Compare" /><div className="internal-scroll overflow-x-auto rounded-2xl border border-black/[0.08]"><table className="w-full min-w-[34rem] border-collapse text-left"><thead><tr className="border-b border-black/[0.08] bg-[#fbfbfd]"><th className="px-5 py-4 text-xs font-medium text-[#6e6e73]">Feature</th>{config.columns.map((column) => <th key={column} className="px-5 py-4 text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f]">{column}</th>)}</tr></thead><tbody>{config.rows.map((row) => <tr key={row.label} className="border-b border-black/[0.07] last:border-0"><th className="px-5 py-4 text-sm font-medium text-[#515154]">{row.label}</th>{config.columns.map((column, index) => { const value = row.values[index]; return <td key={column} className="px-5 py-4 text-sm text-[#515154]">{value === true ? <Check className="size-4 text-[#248a3d]" strokeWidth={2.4} aria-label="Included" /> : value === false ? <span className="text-[#aeaeb2]">—</span> : value}</td>; })}</tr>)}</tbody></table></div></section>;
+  const columns = config.columns;
+  const rows = config.rows;
+  if (!columns?.length || !rows?.length) return <InvalidBlock />;
+  return <section className="my-10"><BlockTitle title={config.title} eyebrow="Compare" /><div className="internal-scroll overflow-x-auto rounded-2xl border border-black/[0.08]"><table className="w-full min-w-[34rem] border-collapse text-left"><thead><tr className="border-b border-black/[0.08] bg-[#fbfbfd]"><th className="px-5 py-4 text-xs font-medium text-[#6e6e73]">Feature</th>{columns.map((column) => <th key={column} className="px-5 py-4 text-sm font-semibold tracking-[-0.015em] text-[#1d1d1f]">{column}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.label} className="border-b border-black/[0.07] last:border-0"><th className="px-5 py-4 text-sm font-medium text-[#515154]">{row.label}</th>{columns.map((column, index) => { const value = row.values[index]; return <td key={column} className="px-5 py-4 text-sm text-[#515154]">{value === true ? <Check className="size-4 text-[#248a3d]" strokeWidth={2.4} aria-label="Included" /> : value === false ? <span className="text-[#aeaeb2]">—</span> : value}</td>; })}</tr>)}</tbody></table></div></section>;
 }
 
 function Accordion({ config }: { config: StructuredConfig }) {
