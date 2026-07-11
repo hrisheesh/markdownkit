@@ -1,7 +1,7 @@
 # Markdown Flow
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/hrisheesh/markdown-flow/main/public/readme/markdown-flow-hero.svg" alt="Markdown Flow preview showing rich document blocks" width="100%" />
+  <img src="https://raw.githubusercontent.com/hrisheesh/markdown-flow/main/.github/assets/markdown-flow-hero.svg" alt="Markdown Flow preview showing rich document blocks" width="100%" />
 </p>
 
 <p align="center">
