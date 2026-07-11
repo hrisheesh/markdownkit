@@ -110,7 +110,7 @@ function AssistantAnswer() {
 }
 ```
 
-`useMarkdownFlowStream()` also accepts provider-neutral text, citation, dataset, error, and complete events through `stream.apply(event)`. It exposes `append`, `replace`, `complete`, `fail`, `cancel`, and `retry` controls. Use the hook for incremental streaming; for a simple accumulated string, pass `content` directly to `StreamingRichMarkdown`.
+`useMarkdownFlowStream()` also accepts provider-neutral text, citation, dataset, error, and complete events through `stream.apply(event)`. For a completed structured response, use `stream.applyResponse(response)`. It exposes `append`, `replace`, `complete`, `fail`, `cancel`, and `retry` controls. Use the hook for incremental streaming; for a simple accumulated string, pass `content` directly to `StreamingRichMarkdown`.
 
 ### Connect an LLM
 
@@ -154,6 +154,58 @@ export function AssistantAnswer() {
 ```
 
 Use the prompt path when the provider only returns text. Prefer the structured-output/tool path when it is available: it constrains the response envelope, while Markdown Flow still validates every fenced block before rendering.
+
+### Render trusted RAG sources and analytics data
+
+Models select a dataset ID and approved visual fields; they never supply the data rows. Your application resolves each requested dataset after applying its own tenant, user, and authorization checks. This keeps large analytics payloads out of the model context and lets data refresh independently of the generated narrative.
+
+~~~~md
+```chart
+{
+  "dataset": "revenue-by-month",
+  "type": "line",
+  "x": "month",
+  "y": "revenue",
+  "title": "Monthly revenue"
+}
+```
+~~~~
+
+```tsx
+import {
+  StreamingRichMarkdown,
+  type MarkdownFlowDatasetResolver,
+} from "markdown-flow/ai";
+
+const datasetResolver: MarkdownFlowDatasetResolver = {
+  async resolve({ id, fields }) {
+    const result = await api.getAuthorizedDataset(id, fields);
+    if (!result) return { status: "unavailable" };
+    if (!result.allowed) return { status: "denied" };
+
+    return {
+      status: "ready",
+      value: {
+        id,
+        schema: { fields: ["month", "revenue"] },
+        data: result.rows,
+      },
+    };
+  },
+};
+
+<StreamingRichMarkdown
+  stream={stream}
+  datasetResolver={datasetResolver}
+  renderPolicy={{
+    allowedBlocks: ["chart"],
+    allowedDatasetIds: ["revenue-by-month"],
+    allowedDatasetFields: { "revenue-by-month": ["month", "revenue"] },
+  }}
+/>;
+```
+
+Dataset charts show loading, unavailable, denied, and error states. `useMarkdownFlowDataset(request, datasetResolver)` returns a `refresh()` function when you need to reload data without regenerating the narrative. Likewise, `citationResolver` on `RichMarkdown` or `StreamingRichMarkdown` resolves only source IDs present in the rendered response.
 
 ### Lean Markdown-only entry
 

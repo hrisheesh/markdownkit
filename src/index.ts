@@ -16,6 +16,7 @@ export type {
   MarkdownFlowBlockType,
   MarkdownFlowCitation,
   MarkdownFlowDataset,
+  MarkdownFlowDatasetSchema,
   MarkdownFlowProtocol,
   MarkdownFlowRenderPolicy,
   MarkdownFlowResponse,

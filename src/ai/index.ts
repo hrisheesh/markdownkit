@@ -1,6 +1,6 @@
 export { StreamingRichMarkdown, useMarkdownFlowStream } from "./StreamingRichMarkdown";
 export type { MarkdownFlowStreamController, StreamingRichMarkdownProps, UseMarkdownFlowStreamOptions } from "./StreamingRichMarkdown";
-export { applyMarkdownFlowStreamEvent, createMarkdownFlowStream, MarkdownFlowStreamParser } from "./stream";
+export { applyMarkdownFlowResponse, applyMarkdownFlowStreamEvent, createMarkdownFlowStream, MarkdownFlowStreamParser } from "./stream";
 export type { MarkdownFlowStreamSegment, MarkdownFlowStreamSnapshot, MarkdownFlowStreamStatus } from "./stream";
 export {
   DEFAULT_MARKDOWN_FLOW_RENDER_POLICY,
@@ -12,11 +12,22 @@ export type {
   MarkdownFlowBlockType,
   MarkdownFlowCitation,
   MarkdownFlowDataset,
+  MarkdownFlowDatasetSchema,
   MarkdownFlowProtocol,
   MarkdownFlowRenderPolicy,
   MarkdownFlowResponse,
   MarkdownFlowStreamEvent,
 } from "./protocol";
+export { useMarkdownFlowCitations, useMarkdownFlowDataset } from "./data";
+export type {
+  MarkdownFlowCitationResolver,
+  MarkdownFlowDatasetRequest,
+  MarkdownFlowDatasetResolver,
+  MarkdownFlowDatasetState,
+  MarkdownFlowResolvedDataset,
+  MarkdownFlowResolverResult,
+  MarkdownFlowResolverStatus,
+} from "./data";
 export { validateMarkdownFlowBlock } from "./validation";
 export type { MarkdownFlowBlockValidationResult } from "./validation";
 export {

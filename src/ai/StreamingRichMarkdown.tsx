@@ -5,12 +5,13 @@ import React from "react";
 import RichMarkdown, { type RichMarkdownProps } from "../components/markdown/RichMarkdown";
 import {
   applyMarkdownFlowStreamEvent,
+  applyMarkdownFlowResponse,
   createMarkdownFlowStream,
   type MarkdownFlowStreamSegment,
   type MarkdownFlowStreamSnapshot,
   type MarkdownFlowStreamStatus,
 } from "./stream";
-import type { MarkdownFlowCitation, MarkdownFlowDataset, MarkdownFlowStreamEvent } from "./protocol";
+import type { MarkdownFlowCitation, MarkdownFlowDataset, MarkdownFlowResponse, MarkdownFlowStreamEvent } from "./protocol";
 
 export interface UseMarkdownFlowStreamOptions {
   citations?: readonly MarkdownFlowCitation[];
@@ -21,6 +22,7 @@ export interface MarkdownFlowStreamController extends MarkdownFlowStreamSnapshot
   append(delta: string): void;
   replace(content: string): void;
   apply(event: MarkdownFlowStreamEvent): void;
+  applyResponse(response: MarkdownFlowResponse): void;
   complete(): void;
   fail(message: string): void;
   cancel(): void;
@@ -64,6 +66,9 @@ export function useMarkdownFlowStream(initialContent = "", options: UseMarkdownF
   const apply = React.useCallback((event: MarkdownFlowStreamEvent) => {
     setSnapshot((previous) => applyMarkdownFlowStreamEvent(parser, previous, event));
   }, [parser]);
+  const applyResponse = React.useCallback((response: MarkdownFlowResponse) => {
+    setSnapshot(() => applyMarkdownFlowResponse(parser, response));
+  }, [parser]);
   const complete = React.useCallback(() => {
     parser.finish();
     setSnapshot((previous) => makeSnapshot(parser, "complete", previous.citations, previous.datasets));
@@ -79,7 +84,7 @@ export function useMarkdownFlowStream(initialContent = "", options: UseMarkdownF
     setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets));
   }, [parser]);
 
-  return { ...snapshot, append, replace, apply, complete, fail, cancel, retry };
+  return { ...snapshot, append, replace, apply, applyResponse, complete, fail, cancel, retry };
 }
 
 export interface StreamingRichMarkdownProps extends Omit<RichMarkdownProps, "content" | "citations"> {

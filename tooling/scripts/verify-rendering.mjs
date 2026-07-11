@@ -51,6 +51,38 @@ assert.deepEqual(
   validateMarkdownFlowBlock("chart", '{"type":"line","data":[{"name":"Jan","value":12}],"keys":["value"]}'),
   { valid: true },
 );
+assert.deepEqual(
+  validateMarkdownFlowBlock(
+    "chart",
+    '{"dataset":"revenue-by-month","type":"line","x":"month","y":"revenue"}',
+    {
+      allowedBlocks: ["chart"],
+      allowedDatasetIds: ["revenue-by-month"],
+      allowedDatasetFields: { "revenue-by-month": ["month", "revenue"] },
+    },
+  ),
+  { valid: true },
+);
+assert.match(
+  validateMarkdownFlowBlock(
+    "chart",
+    '{"dataset":"revenue-by-month","type":"line","x":"month","y":"margin"}',
+    {
+      allowedBlocks: ["chart"],
+      allowedDatasetIds: ["revenue-by-month"],
+      allowedDatasetFields: { "revenue-by-month": ["month", "revenue"] },
+    },
+  ).reason,
+  /outside the approved dataset schema/,
+);
+assert.match(
+  validateMarkdownFlowBlock(
+    "chart",
+    '{"dataset":"revenue-by-month","type":"line","data":[{"name":"Jan","value":12}],"x":"month","y":"revenue"}',
+    { allowedBlocks: ["chart"], allowedDatasetIds: ["revenue-by-month"], allowedDatasetFields: { "revenue-by-month": ["month", "revenue"] } },
+  ).reason,
+  /inline data or a dataset reference/,
+);
 assert.match(
   validateMarkdownFlowBlock("chart", "{ type: 'line' }", { allowedBlocks: ["chart"] }).reason,
   /valid JSON/,

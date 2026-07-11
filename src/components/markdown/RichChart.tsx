@@ -27,7 +27,7 @@ import {
   YAxis,
 } from "recharts";
 
-type ChartConfig = {
+export type ChartConfig = {
   type: "bar" | "line" | "pie" | "area" | "radar" | "composed" | "sparkline" | "scatter" | "funnel" | "gauge" | "heatmap" | "waterfall" | "cohort";
   title?: string;
   data: Record<string, string | number>[];
@@ -63,15 +63,15 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
-export default function RichChart({ configStr }: { configStr: string }) {
+export default function RichChart({ configStr, config: suppliedConfig }: { configStr?: string; config?: ChartConfig }) {
   const chartId = useId().replace(/:/g, "");
   const config = useMemo<ChartConfig | null>(() => {
     try {
-      return JSON5.parse(configStr.replace(/^`+|`+$/g, "").trim());
+      return suppliedConfig ?? JSON5.parse((configStr ?? "").replace(/^`+|`+$/g, "").trim());
     } catch {
       return null;
     }
-  }, [configStr]);
+  }, [configStr, suppliedConfig]);
 
   if (!config?.data || !config.type) {
     return <div className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">This chart configuration is incomplete.</div>;

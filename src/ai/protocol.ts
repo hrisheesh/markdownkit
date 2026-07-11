@@ -53,7 +53,12 @@ export interface MarkdownFlowCitation {
 export interface MarkdownFlowDataset {
   id: string;
   data: unknown;
-  schema?: Record<string, unknown>;
+  schema?: MarkdownFlowDatasetSchema;
+}
+
+/** A host-owned allowlist of fields that an artifact may request from a dataset. */
+export interface MarkdownFlowDatasetSchema {
+  fields: readonly string[];
 }
 
 /**
@@ -84,6 +89,8 @@ export type MarkdownFlowStreamEvent =
 export interface MarkdownFlowRenderPolicy {
   allowedBlocks?: readonly MarkdownFlowBlockType[];
   allowedDatasetIds?: readonly string[];
+  /** Per-dataset fields that model output is allowed to select. */
+  allowedDatasetFields?: Readonly<Record<string, readonly string[]>>;
   maxBlockCharacters?: number;
   maxBlocks?: number;
   maxTableRows?: number;
@@ -94,6 +101,7 @@ export interface MarkdownFlowRenderPolicy {
 export const DEFAULT_MARKDOWN_FLOW_RENDER_POLICY: Readonly<Required<MarkdownFlowRenderPolicy>> = {
   allowedBlocks: MARKDOWN_FLOW_LLM_BLOCK_TYPES,
   allowedDatasetIds: [],
+  allowedDatasetFields: {},
   maxBlockCharacters: 20_000,
   maxBlocks: 32,
   maxTableRows: 250,

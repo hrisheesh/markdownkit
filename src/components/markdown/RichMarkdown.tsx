@@ -8,9 +8,11 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
 import { DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, isMarkdownFlowBlockType, type MarkdownFlowRenderPolicy } from "../../ai/protocol";
+import { useMarkdownFlowCitations, type MarkdownFlowCitationResolver, type MarkdownFlowDatasetResolver } from "../../ai/data";
 import { validateMarkdownFlowBlock } from "../../ai/validation";
 import RichBlockValidationError from "./RichBlockValidationError";
 import RichChart from "./RichChart";
+import RichDatasetChart from "./RichDatasetChart";
 import RichCodeBlock from "./RichCodeBlock";
 import RichMediaBlock from "./RichMediaBlock";
 import RichStructuredBlock from "./RichStructuredBlock";
@@ -68,7 +70,7 @@ function CitationBadge({ citation }: { citation: Citation }) {
   );
 }
 
-function getCitationMap(citations?: Citation[]) {
+function getCitationMap(citations?: readonly Citation[]) {
   const map = new Map<string, Citation>();
 
   citations?.forEach((citation) => {
@@ -84,14 +86,14 @@ function InlineWithCitations({
   citations,
 }: {
   children: ReactNode;
-  citations?: Citation[];
+  citations?: readonly Citation[];
 }) {
   const citationMap = React.useMemo(() => getCitationMap(citations), [citations]);
 
   const renderNode = (node: ReactNode, keyPrefix: string): ReactNode => {
     if (typeof node === "string") {
       return node
-        .split(/(\[\d+\]|\b\d+\b)/g)
+        .split(/(\[[A-Za-z0-9_-]+\]|\b\d+\b)/g)
         .filter(Boolean)
         .map((part, index) => {
           const citation = citationMap.get(part) ?? citationMap.get(part.replace(/[\[\]]/g, ""));
@@ -124,11 +126,15 @@ export interface RichMarkdownProps {
   /** Markdown source, including optional rich fenced blocks. */
   content: string;
   /** Source references rendered as accessible inline citation badges. */
-  citations?: Citation[];
+  citations?: readonly Citation[];
   /** Explicit renderers for fenced block languages. These receive text-only code after Markdown sanitization. */
   blockRenderers?: RichBlockRenderers;
   /** Enables strict validation and host-controlled limits for Markdown Flow's built-in AI blocks. */
   renderPolicy?: MarkdownFlowRenderPolicy;
+  /** Resolves host-authorized chart data referenced by an AI block. */
+  datasetResolver?: MarkdownFlowDatasetResolver;
+  /** Resolves source metadata when a narrative references a citation not sent in its envelope. */
+  citationResolver?: MarkdownFlowCitationResolver;
   /** Overrides for standard Markdown HTML elements. Source Markdown remains sanitized before these render. */
   components?: Components;
 }
@@ -147,7 +153,18 @@ export type RichBlockRenderers = Readonly<Record<string, RichBlockRenderer | und
  * Renders safe Markdown plus Markdown Flow's chart, media, and structured blocks.
  * Import `markdown-flow/styles.css` once in the consuming application.
  */
-export default function RichMarkdown({ content, citations, blockRenderers, renderPolicy, components }: RichMarkdownProps) {
+function hasDatasetReference(code: string): boolean {
+  try {
+    const config: unknown = JSON.parse(code);
+    return typeof config === "object" && config !== null && "dataset" in config;
+  } catch {
+    return false;
+  }
+}
+
+export default function RichMarkdown({ content, citations, blockRenderers, renderPolicy, datasetResolver, citationResolver, components }: RichMarkdownProps) {
+  const citationIds = React.useMemo(() => Array.from(content.matchAll(/\[([A-Za-z0-9_-]+)\]/g), (match) => match[1]), [content]);
+  const resolvedCitations = useMarkdownFlowCitations(citationIds, citations, citationResolver);
   const containsTooManyAiBlocks = renderPolicy
     && (content.match(/^```(?:callout|metrics|timeline|steps|comparison|accordion|tabs|cards|filetree|progress|checklist|status|quote|chart|mermaid|embed|image|map)\s*$/gm)?.length ?? 0)
       > (renderPolicy.maxBlocks ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxBlocks);
@@ -174,37 +191,37 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
         components={{
           h1: ({ children }) => (
             <h1 className="mb-7 mt-12 text-[2rem] font-semibold tracking-[-0.045em] leading-[1.08] text-ink first:mt-0 sm:mt-16 sm:text-[3.25rem]">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h1>
           ),
           h2: ({ children }) => (
             <h2 className="mb-4 mt-11 scroll-mt-8 border-b border-hairline-soft pb-3 text-[1.5rem] font-semibold tracking-[-0.035em] leading-tight text-ink first:mt-0 sm:mt-14 sm:text-[2rem]">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h2>
           ),
           h3: ({ children }) => (
             <h3 className="mb-3 mt-8 scroll-mt-8 text-lg font-semibold tracking-[-0.025em] leading-snug text-ink first:mt-0 sm:mt-10 sm:text-xl">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h3>
           ),
           h4: ({ children }) => (
             <h4 className="mb-2 mt-7 scroll-mt-8 text-base font-semibold leading-snug text-ink first:mt-0 sm:mt-8 sm:text-lg">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h4>
           ),
           h5: ({ children }) => (
             <h5 className="mb-2 mt-6 text-base font-semibold leading-snug text-ink first:mt-0">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h5>
           ),
           h6: ({ children }) => (
             <h6 className="mb-2 mt-6 text-[11px] font-semibold uppercase tracking-[0.14em] leading-snug text-steel first:mt-0">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h6>
           ),
           p: ({ children }) => (
             <p className="my-5 leading-7 text-charcoal first:mt-0 last:mb-0 sm:leading-8">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </p>
           ),
           strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
@@ -225,7 +242,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
           ),
           li: ({ children }) => (
             <li className="pl-1 leading-7 sm:leading-8">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </li>
           ),
           input: ({ checked, type }) => (
@@ -257,6 +274,10 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
             }
 
             if (language === "chart") {
+              if (hasDatasetReference(code)) {
+                if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require a render policy." />;
+                return <RichDatasetChart configStr={code} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} />;
+              }
               return <RichChart configStr={code} />;
             }
 
@@ -292,12 +313,12 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
           tr: ({ children }) => <tr className="transition-colors duration-150 hover:bg-surface/60">{children}</tr>,
           th: ({ children }) => (
             <th className="whitespace-nowrap px-3 py-3 align-bottom font-bold sm:px-4">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </th>
           ),
           td: ({ children }) => (
             <td className="px-3 py-3 align-top text-charcoal sm:px-4">
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </td>
           ),
           a: ({ children, href }) => (
@@ -307,7 +328,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
               rel="noreferrer"
               className="font-medium text-brand-blue underline decoration-brand-blue/35 underline-offset-4 transition-colors duration-150 hover:text-brand-blue-deep hover:decoration-brand-blue/80 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand-blue/35"
             >
-              <InlineWithCitations citations={citations}>{children}</InlineWithCitations>
+              <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </a>
           ),
           hr: () => <hr className="my-10 border-t border-hairline-soft" />,

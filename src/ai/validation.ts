@@ -133,11 +133,23 @@ function validateStructuredBlock(type: MarkdownFlowBlockType, config: JsonRecord
 }
 
 function validateChart(config: JsonRecord, policy: Required<MarkdownFlowRenderPolicy>): string | null {
-  if (!hasOnlyKeys(config, ["type", "title", "data", "keys", "colors", "lines", "bars", "areas", "max"])) return "The chart contains unsupported properties.";
+  if (!hasOnlyKeys(config, ["type", "title", "data", "dataset", "x", "y", "keys", "colors", "lines", "bars", "areas", "max"])) return "The chart contains unsupported properties.";
   if (!isString(config.type) || !chartTypes.has(config.type)) return "The chart type is not supported.";
-  if (!Array.isArray(config.data) || !config.data.length || config.data.length > policy.maxChartDataPoints || !config.data.every(isRecord)) return "Chart data must be a non-empty, bounded array of objects.";
+  const datasetId = config.dataset;
+  const isDatasetChart = datasetId !== undefined;
+  if (isDatasetChart && !isString(datasetId)) return "The dataset reference must be a string.";
+  if (isDatasetChart && config.data !== undefined) return "A chart must use inline data or a dataset reference, not both.";
+  if (!isDatasetChart && (!Array.isArray(config.data) || !config.data.length || config.data.length > policy.maxChartDataPoints || !config.data.every(isRecord))) return "Chart data must be a non-empty, bounded array of objects.";
+  if (isDatasetChart) {
+    const approvedDatasetId = datasetId as string;
+    if (!policy.allowedDatasetIds.includes(approvedDatasetId)) return "This dataset is disabled by this render policy.";
+    const requestedFields = [config.x, config.y, ...(Array.isArray(config.keys) ? config.keys : []), ...(Array.isArray(config.lines) ? config.lines : []), ...(Array.isArray(config.bars) ? config.bars : []), ...(Array.isArray(config.areas) ? config.areas : [])];
+    if (!requestedFields.length || !requestedFields.every(isString)) return "A dataset chart needs approved visual fields.";
+    const allowedFields = policy.allowedDatasetFields[approvedDatasetId];
+    if (!allowedFields || requestedFields.some((field) => !allowedFields.includes(field))) return "The chart requests fields outside the approved dataset schema.";
+  }
   if (![config.title].every(optionalString) || !optionalNumber(config.max)) return "Chart text and numeric properties are invalid.";
-  return ["keys", "colors", "lines", "bars", "areas"].every((key) => config[key] === undefined || (Array.isArray(config[key]) && config[key].every(isString))) ? null : "Chart series properties must be string arrays.";
+  return ["x", "y", "keys", "colors", "lines", "bars", "areas"].every((key) => config[key] === undefined || (key === "x" || key === "y" ? isString(config[key]) : Array.isArray(config[key]) && config[key].every(isString))) ? null : "Chart series properties must be string arrays.";
 }
 
 function validateMedia(type: MarkdownFlowBlockType, config: JsonRecord, policy: Required<MarkdownFlowRenderPolicy>): string | null {

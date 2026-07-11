@@ -1,4 +1,4 @@
-import type { MarkdownFlowCitation, MarkdownFlowDataset, MarkdownFlowStreamEvent } from "./protocol";
+import { MARKDOWN_FLOW_PROTOCOL, type MarkdownFlowCitation, type MarkdownFlowDataset, type MarkdownFlowResponse, type MarkdownFlowStreamEvent } from "./protocol";
 
 export type MarkdownFlowStreamStatus = "streaming" | "complete" | "error" | "cancelled";
 
@@ -147,5 +147,25 @@ export function applyMarkdownFlowStreamEvent(
     error,
     citations,
     datasets,
+  };
+}
+
+/** Applies a completed provider-neutral response without treating its metadata as model text. */
+export function applyMarkdownFlowResponse(
+  parser: MarkdownFlowStreamParser,
+  response: MarkdownFlowResponse,
+): MarkdownFlowStreamSnapshot {
+  if (response.protocol !== MARKDOWN_FLOW_PROTOCOL) {
+    throw new Error(`Unsupported Markdown Flow protocol: ${response.protocol}`);
+  }
+  parser.reset(response.content);
+  parser.finish();
+  const segments = parser.getSegments();
+  return {
+    content: segments.map((segment) => segment.content).join(""),
+    segments,
+    status: "complete",
+    citations: response.citations ?? [],
+    datasets: response.datasets ?? [],
   };
 }
