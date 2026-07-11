@@ -8,7 +8,13 @@ const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const { RichMarkdown } = require(root);
 const { validateMarkdownFlowBlock } = require(root);
-const { MarkdownFlowStreamParser, StreamingRichMarkdown } = require(`${root}/dist/ai/index.js`);
+const {
+  MarkdownFlowStreamParser,
+  StreamingRichMarkdown,
+  createMarkdownFlowInstructions,
+  markdownFlowResponseSchema,
+  normalizeMarkdownFlowStreamChunk,
+} = require(`${root}/dist/ai/index.js`);
 const { RichMarkdownCore } = require(`${root}/dist/core.js`);
 const { StaticMarkdown } = require(`${root}/dist/server.js`);
 
@@ -74,6 +80,17 @@ const streamingMarkup = render(StreamingRichMarkdown, {
   renderPolicy: { allowedBlocks: ["callout"] },
 });
 assert.match(streamingMarkup, /Rendered once complete/);
+
+const instructions = createMarkdownFlowInstructions({
+  allowedBlocks: ["callout"],
+  availableDatasets: ["revenue-by-month"],
+  citations: [{ id: "1", filename: "report.pdf" }],
+});
+assert.match(instructions, /Allowed block types: callout/);
+assert.match(instructions, /Approved dataset IDs: revenue-by-month/);
+assert.deepEqual(markdownFlowResponseSchema.required, ["protocol", "content"]);
+assert.deepEqual(normalizeMarkdownFlowStreamChunk({ choices: [{ delta: { content: "Hello" } }] }), [{ type: "text", delta: "Hello" }]);
+assert.deepEqual(normalizeMarkdownFlowStreamChunk({ type: "message_stop" }), [{ type: "complete" }]);
 
 const a11yMarkup = render(RichMarkdown, {
   content: "```accordion\n{ title: 'Questions', items: [{ title: 'Is it accessible?', content: 'Yes.', open: true }] }\n```\n\n```progress\n{ items: [{ title: 'Release', value: 75, total: 100 }] }\n```",

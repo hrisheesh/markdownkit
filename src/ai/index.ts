@@ -19,3 +19,18 @@ export type {
 } from "./protocol";
 export { validateMarkdownFlowBlock } from "./validation";
 export type { MarkdownFlowBlockValidationResult } from "./validation";
+export {
+  createMarkdownFlowInstructions,
+  createMarkdownFlowResponseTool,
+  markdownFlowResponseSchema,
+  markdownFlowResponseTool,
+  normalizeMarkdownFlowStream,
+  normalizeMarkdownFlowStreamChunk,
+  readMarkdownFlowSSE,
+} from "./integration";
+export type {
+  MarkdownFlowDatasetInstruction,
+  MarkdownFlowInstructionsOptions,
+  MarkdownFlowJsonSchema,
+  MarkdownFlowToolDefinition,
+} from "./integration";

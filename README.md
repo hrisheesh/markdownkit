@@ -112,6 +112,49 @@ function AssistantAnswer() {
 
 `useMarkdownFlowStream()` also accepts provider-neutral text, citation, dataset, error, and complete events through `stream.apply(event)`. It exposes `append`, `replace`, `complete`, `fail`, `cancel`, and `retry` controls. Use the hook for incremental streaming; for a simple accumulated string, pass `content` directly to `StreamingRichMarkdown`.
 
+### Connect an LLM
+
+The `markdown-flow/ai` entry point is provider-neutral. On the server, add the generated contract to the model request and keep retrieval, permissions, citation metadata, and dataset resolution in your own application.
+
+```ts
+import { createMarkdownFlowInstructions } from "markdown-flow/ai";
+
+const instructions = createMarkdownFlowInstructions({
+  allowedBlocks: ["callout", "metrics", "chart"],
+  availableDatasets: [{ id: "revenue-by-month", description: "Authorized monthly revenue data" }],
+  citations: [{ id: "1", filename: "Q2-report.pdf" }],
+});
+
+// Pass `instructions` to your provider's system/developer instruction field.
+// Stream the provider response through your existing SSE endpoint.
+```
+
+For providers with structured output or tool calling, adapt `markdownFlowResponseSchema` or `markdownFlowResponseTool` to that provider's SDK. Its `content` field contains Markdown Flow Markdown; citations and datasets must still be sent as trusted application metadata, never accepted from the model.
+
+For a generic fetch/SSE endpoint, the client can consume plain text chunks, normalized Markdown Flow events, or common provider chunk shapes without adding a provider SDK:
+
+```tsx
+import { StreamingRichMarkdown, readMarkdownFlowSSE, useMarkdownFlowStream } from "markdown-flow/ai";
+
+export function AssistantAnswer() {
+  const stream = useMarkdownFlowStream();
+
+  async function ask(question: string) {
+    const response = await fetch("/api/assistant", {
+      method: "POST",
+      body: JSON.stringify({ question }),
+      headers: { "content-type": "application/json" },
+    });
+
+    for await (const event of readMarkdownFlowSSE(response)) stream.apply(event);
+  }
+
+  return <StreamingRichMarkdown stream={stream} renderPolicy={{ allowedBlocks: ["callout", "metrics", "chart"] }} />;
+}
+```
+
+Use the prompt path when the provider only returns text. Prefer the structured-output/tool path when it is available: it constrains the response envelope, while Markdown Flow still validates every fenced block before rendering.
+
 ### Lean Markdown-only entry
 
 When an experience only needs responsive, sanitized GitHub-flavored Markdown, use the dedicated core entry. It excludes rich blocks, charts, Mermaid, KaTeX, and syntax highlighting from the imported runtime while leaving the default package behavior unchanged.
