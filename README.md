@@ -1,8 +1,27 @@
 # Markdown Render
 
-An expressive Markdown workspace for turning plain text into polished, interactive documents. Write in the editor, preview instantly, and use a small structured-block vocabulary when prose is not the clearest way to communicate an idea.
+<p align="center">
+  <img src="./public/readme/markdown-render-hero.svg" alt="A bright Markdown Render workspace with a document, chart, callout, and metric card" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Markdown, with more ways to make an idea clear.</strong><br />
+  An expressive workspace for turning plain text into polished, interactive documents.
+</p>
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js) ![React](https://img.shields.io/badge/React-19-149eca?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?logo=tailwindcss)
+
+## Make every document easier to understand
+
+Write naturally in the editor and watch the preview become a finished, readable document. When a paragraph is not the clearest tool, add a compact structured block—without leaving Markdown.
+
+| Tell a story | Make a decision | Show the shape of the data |
+| :--- | :--- | :--- |
+| Callouts, timelines, quotes, steps, tabs, accordions, and image layouts keep a narrative moving. | Comparisons, cards, metrics, progress, checklists, file trees, and status blocks make information scannable. | Calm charts for trends, distributions, cohorts, funnels, and cumulative change make the signal easier to see. |
+
+```text
+Plain Markdown  →  One small fenced block  →  A richer reading experience
+```
 
 ## Why it exists
 

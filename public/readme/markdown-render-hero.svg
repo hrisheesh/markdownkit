@@ -1,0 +1,77 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Markdown Render visual workspace</title>
+  <desc id="desc">A bright editorial illustration of a polished markdown document with charts and structured content.</desc>
+  <defs>
+    <linearGradient id="background" x1="75" y1="40" x2="1500" y2="880" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFF"/>
+      <stop offset=".48" stop-color="#FDFBFA"/>
+      <stop offset="1" stop-color="#F5F0FF"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="280" y1="150" x2="1290" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF"/>
+      <stop offset="1" stop-color="#FCFCFE"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="162" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A9C8FF" stop-opacity=".62"/>
+      <stop offset="1" stop-color="#A9C8FF" stop-opacity=".04"/>
+    </linearGradient>
+    <filter id="shadow" x="160" y="72" width="1320" height="758" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#53627D" flood-opacity=".13"/>
+    </filter>
+    <filter id="soft" x="0" y="0" width="1600" height="900" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="42"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" rx="36" fill="url(#background)"/>
+  <g opacity=".55" filter="url(#soft)">
+    <circle cx="166" cy="151" r="94" fill="#D6E7FF"/>
+    <circle cx="1441" cy="755" r="158" fill="#E6D9FF"/>
+    <circle cx="1395" cy="136" r="78" fill="#D8F5EA"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="235" y="112" width="1130" height="660" rx="28" fill="url(#paper)"/>
+    <path d="M235 188H1365" stroke="#EEF0F5" stroke-width="2"/>
+    <circle cx="283" cy="150" r="7" fill="#FFB7AD"/>
+    <circle cx="307" cy="150" r="7" fill="#FFD287"/>
+    <circle cx="331" cy="150" r="7" fill="#9EDDC0"/>
+    <rect x="391" y="140" width="240" height="20" rx="10" fill="#F2F4F8"/>
+    <rect x="265" y="218" width="180" height="510" rx="18" fill="#F8F9FC"/>
+    <rect x="291" y="254" width="91" height="12" rx="6" fill="#1F2937"/>
+    <rect x="291" y="290" width="126" height="8" rx="4" fill="#CFD5E1"/>
+    <rect x="291" y="318" width="104" height="8" rx="4" fill="#E0E4EC"/>
+    <rect x="285" y="356" width="140" height="42" rx="12" fill="#E9F1FF"/>
+    <rect x="301" y="373" width="74" height="8" rx="4" fill="#4B75B9"/>
+    <rect x="291" y="433" width="112" height="8" rx="4" fill="#D9DEE8"/>
+    <rect x="291" y="461" width="94" height="8" rx="4" fill="#E0E4EC"/>
+    <rect x="291" y="489" width="127" height="8" rx="4" fill="#E0E4EC"/>
+    <rect x="285" y="538" width="140" height="42" rx="12" fill="#F2EDFF"/>
+    <rect x="301" y="555" width="83" height="8" rx="4" fill="#7561B2"/>
+    <rect x="291" y="619" width="91" height="8" rx="4" fill="#D9DEE8"/>
+    <rect x="291" y="647" width="116" height="8" rx="4" fill="#E0E4EC"/>
+  </g>
+  <g>
+    <rect x="484" y="229" width="268" height="15" rx="7.5" fill="#172033"/>
+    <rect x="484" y="262" width="484" height="10" rx="5" fill="#D4D9E3"/>
+    <rect x="484" y="285" width="411" height="10" rx="5" fill="#E5E8EE"/>
+    <rect x="484" y="323" width="850" height="92" rx="18" fill="#F4F8FF"/>
+    <rect x="509" y="348" width="10" height="40" rx="5" fill="#6B9BEB"/>
+    <rect x="540" y="347" width="138" height="11" rx="5.5" fill="#2D4A72"/>
+    <rect x="540" y="373" width="478" height="8" rx="4" fill="#A7B7CC"/>
+    <rect x="484" y="440" width="530" height="252" rx="20" fill="#FFF" stroke="#EAEDF3" stroke-width="2"/>
+    <text x="514" y="480" fill="#253044" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Weekly momentum</text>
+    <text x="514" y="507" fill="#8490A2" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">A calm view of progress</text>
+    <path d="M525 640C575 614 603 633 648 586C686 546 718 587 762 563C808 538 841 483 890 517C923 540 949 497 980 474V660H525V640Z" fill="url(#area)"/>
+    <path d="M525 640C575 614 603 633 648 586C686 546 718 587 762 563C808 538 841 483 890 517C923 540 949 497 980 474" stroke="#6795E6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="648" cy="586" r="6" fill="#FFF" stroke="#6795E6" stroke-width="4"/>
+    <circle cx="890" cy="517" r="6" fill="#FFF" stroke="#6795E6" stroke-width="4"/>
+    <rect x="1040" y="440" width="294" height="252" rx="20" fill="#FFF" stroke="#EAEDF3" stroke-width="2"/>
+    <text x="1068" y="480" fill="#253044" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">This week</text>
+    <rect x="1068" y="510" width="236" height="1" fill="#EDF0F4"/>
+    <text x="1068" y="550" fill="#8994A6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Active readers</text>
+    <text x="1068" y="590" fill="#202C41" font-family="ui-sans-serif, system-ui, sans-serif" font-size="34" font-weight="650">24.8K</text>
+    <rect x="1180" y="535" width="70" height="26" rx="13" fill="#E8F7EF"/>
+    <text x="1193" y="553" fill="#3D9B68" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600">+12.4%</text>
+    <rect x="1068" y="622" width="236" height="10" rx="5" fill="#EDF1F6"/>
+    <rect x="1068" y="622" width="169" height="10" rx="5" fill="#AFCDF8"/>
+  </g>
+</svg>
