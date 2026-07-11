@@ -4,6 +4,7 @@ import React from "react";
 
 import type { MarkdownFlowArtifactFallbackProps, MarkdownFlowValidatedArtifact } from "../../ai/artifacts";
 import type { MarkdownFlowResolverResult } from "../../ai/data";
+import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "../../ai/telemetry";
 
 export interface MarkdownFlowArtifactStateProps {
   state: MarkdownFlowArtifactFallbackProps["state"];
@@ -28,7 +29,7 @@ export function MarkdownFlowArtifactState({ state, message, onRetry }: MarkdownF
   );
 }
 
-function ResolvedArtifactRenderer({ artifact }: { artifact: MarkdownFlowValidatedArtifact }) {
+function ResolvedArtifactRenderer({ artifact, telemetry }: { artifact: MarkdownFlowValidatedArtifact; telemetry?: MarkdownFlowTelemetry }) {
   const { definition, input } = artifact;
   const [refreshToken, setRefreshToken] = React.useState(0);
   const [result, setResult] = React.useState<MarkdownFlowResolverResult<unknown>>({ status: "loading" });
@@ -43,6 +44,10 @@ function ResolvedArtifactRenderer({ artifact }: { artifact: MarkdownFlowValidate
     return () => { active = false; };
   }, [definition, input, refreshToken]);
 
+  React.useEffect(() => {
+    emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "artifact", outcome: result.status });
+  }, [result.status, telemetry]);
+
   if (result.status === "ready" && result.value !== undefined) {
     return <>{definition.render({ name: definition.name, version: definition.version, input, value: result.value, refresh })}</>;
   }
@@ -50,9 +55,9 @@ function ResolvedArtifactRenderer({ artifact }: { artifact: MarkdownFlowValidate
   return <>{definition.fallback({ name: definition.name, version: definition.version, reason: result.message ?? "The artifact is not available.", state, retry: refresh })}</>;
 }
 
-export default function RichArtifactBlock({ artifact }: { artifact: MarkdownFlowValidatedArtifact }) {
+export default function RichArtifactBlock({ artifact, telemetry }: { artifact: MarkdownFlowValidatedArtifact; telemetry?: MarkdownFlowTelemetry }) {
   if (!artifact.definition.resolver) {
     return <>{artifact.definition.render({ name: artifact.definition.name, version: artifact.definition.version, input: artifact.input, value: artifact.input })}</>;
   }
-  return <ResolvedArtifactRenderer key={`${artifact.definition.name}\u0000${artifact.definition.version}`} artifact={artifact} />;
+  return <ResolvedArtifactRenderer key={`${artifact.definition.name}\u0000${artifact.definition.version}`} artifact={artifact} telemetry={telemetry} />;
 }

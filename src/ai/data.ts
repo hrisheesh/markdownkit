@@ -3,6 +3,7 @@
 import React from "react";
 
 import type { MarkdownFlowCitation, MarkdownFlowDatasetSchema } from "./protocol";
+import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "./telemetry";
 
 export type MarkdownFlowResolverStatus = "loading" | "ready" | "unavailable" | "denied" | "error";
 
@@ -111,6 +112,7 @@ export function useMarkdownFlowCitations(
   citationIds: readonly string[],
   citations: readonly MarkdownFlowCitation[] | undefined,
   resolver: MarkdownFlowCitationResolver | undefined,
+  telemetry?: MarkdownFlowTelemetry,
 ): readonly MarkdownFlowCitation[] {
   const key = [...new Set(citationIds)].sort().join("\u0000");
   const ids = React.useMemo(() => key ? key.split("\u0000") : [], [key]);
@@ -128,6 +130,7 @@ export function useMarkdownFlowCitations(
     }
     const suppliedIds = new Set(supplied.map((citation) => citation.id.replace(/[\[\]]/g, "")));
     const missing = ids.filter((id) => !suppliedIds.has(id));
+    if (missing.length) emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "citation", outcome: "loading" });
     const cache = citationCache.get(resolver) ?? new Map<string, MarkdownFlowCitation>();
     citationCache.set(resolver, cache);
     void Promise.all(missing.map(async (id) => {
@@ -136,18 +139,21 @@ export function useMarkdownFlowCitations(
       const result = await resolver.resolve(id);
       if (result.status === "ready" && result.value) {
         cache.set(id, result.value);
+        emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "citation", outcome: "ready" });
         return result.value;
       }
+      emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "citation", outcome: result.status });
       return undefined;
     })).then((next) => {
       if (active) setResolved(next.filter((citation): citation is MarkdownFlowCitation => Boolean(citation)));
     }).catch(() => {
+      emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "citation", outcome: "error" });
       if (active) setResolved([]);
     });
     return () => { active = false; };
   // `suppliedKey` changes whenever relevant supplied citation metadata changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids, key, resolver, suppliedKey]);
+  }, [ids, key, resolver, suppliedKey, telemetry]);
 
   return React.useMemo(() => {
     const byId = new Map<string, MarkdownFlowCitation>();

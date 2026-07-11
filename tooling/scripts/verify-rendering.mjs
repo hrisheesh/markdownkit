@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
+import { aiStreamReplays } from "../fixtures/ai-stream-replays.mjs";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../..", import.meta.url));
@@ -145,12 +146,24 @@ streamParser.finish();
 assert.equal(streamParser.getSegments().map((segment) => segment.content).join(""), streamedContent);
 assert.equal(streamParser.getSegments().filter((segment) => segment.type === "block").length, 1);
 
+for (const replay of aiStreamReplays) {
+  const parser = new MarkdownFlowStreamParser();
+  replay.chunks.forEach((chunk) => parser.append(chunk));
+  if (!replay.incomplete) parser.finish();
+  assert.equal(parser.getSegments().map((segment) => segment.content).join(""), replay.expected, `${replay.name} should preserve all provider text`);
+  if (replay.incomplete) assert.equal(parser.getSegments().at(-1)?.type, "pending", `${replay.name} should retain a pending block`);
+}
+
 const streamingMarkup = render(StreamingRichMarkdown, {
   content: streamedContent,
   status: "complete",
   renderPolicy: { allowedBlocks: ["callout"] },
 });
 assert.match(streamingMarkup, /Rendered once complete/);
+const pendingStreamingMarkup = render(StreamingRichMarkdown, { content: "```callout\n{\"title\":\"Partial\"}", status: "error" });
+assert.match(pendingStreamingMarkup, /role="status"/);
+assert.match(pendingStreamingMarkup, /Incomplete AI block/);
+assert.match(render(StreamingRichMarkdown, { content: "", status: "error", error: "Provider stopped." }), /role="alert"/);
 
 const instructions = createMarkdownFlowInstructions({
   allowedBlocks: ["callout"],

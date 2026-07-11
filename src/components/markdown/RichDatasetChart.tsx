@@ -4,6 +4,7 @@ import React from "react";
 
 import type { MarkdownFlowDatasetResolver } from "../../ai/data";
 import { useMarkdownFlowDataset } from "../../ai/data";
+import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "../../ai/telemetry";
 import RichChart, { type ChartConfig } from "./RichChart";
 
 type DatasetChartConfig = Omit<ChartConfig, "data"> & {
@@ -38,10 +39,14 @@ function DataState({ status, onRefresh }: { status: "loading" | "unavailable" | 
 }
 
 /** Renders a chart from host-authorized data, never rows supplied by model output. */
-export default function RichDatasetChart({ configStr, resolver, maxDataPoints }: { configStr: string; resolver?: MarkdownFlowDatasetResolver; maxDataPoints: number }) {
+export default function RichDatasetChart({ configStr, resolver, maxDataPoints, telemetry }: { configStr: string; resolver?: MarkdownFlowDatasetResolver; maxDataPoints: number; telemetry?: MarkdownFlowTelemetry }) {
   const config = React.useMemo(() => parseConfig(configStr), [configStr]);
   const fields = React.useMemo(() => config ? [...new Set([config.x, config.y, ...(config.keys ?? []), ...(config.lines ?? []), ...(config.bars ?? []), ...(config.areas ?? [])].filter((field): field is string => Boolean(field)))] : [], [config]);
   const state = useMarkdownFlowDataset(config ? { id: config.dataset, fields } : undefined, resolver);
+
+  React.useEffect(() => {
+    emitMarkdownFlowTelemetry(telemetry, { type: "resolver", resolver: "dataset", outcome: config ? state.status : "error" });
+  }, [config, state.status, telemetry]);
 
   if (!config) return <DataState status="error" onRefresh={state.refresh} />;
   if (state.status !== "ready" || !state.value) {

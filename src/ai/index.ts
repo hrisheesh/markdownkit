@@ -45,6 +45,8 @@ export { MarkdownFlowArtifactState } from "../components/markdown/RichArtifactBl
 export type { MarkdownFlowArtifactStateProps } from "../components/markdown/RichArtifactBlock";
 export { validateMarkdownFlowBlock } from "./validation";
 export type { MarkdownFlowBlockValidationResult } from "./validation";
+export { emitMarkdownFlowTelemetry } from "./telemetry";
+export type { MarkdownFlowTelemetry, MarkdownFlowTelemetryContext, MarkdownFlowTelemetryEvent } from "./telemetry";
 export {
   createMarkdownFlowInstructions,
   createMarkdownFlowResponseTool,

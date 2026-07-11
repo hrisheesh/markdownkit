@@ -12,10 +12,12 @@ import {
   type MarkdownFlowStreamStatus,
 } from "./stream";
 import type { MarkdownFlowCitation, MarkdownFlowDataset, MarkdownFlowResponse, MarkdownFlowStreamEvent } from "./protocol";
+import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "./telemetry";
 
 export interface UseMarkdownFlowStreamOptions {
   citations?: readonly MarkdownFlowCitation[];
   datasets?: readonly MarkdownFlowDataset[];
+  telemetry?: MarkdownFlowTelemetry;
 }
 
 export interface MarkdownFlowStreamController extends MarkdownFlowStreamSnapshot {
@@ -54,6 +56,10 @@ export function useMarkdownFlowStream(initialContent = "", options: UseMarkdownF
     options.citations ?? [],
     options.datasets ?? [],
   ));
+
+  React.useEffect(() => {
+    emitMarkdownFlowTelemetry(options.telemetry, { type: "stream", outcome: snapshot.status, segmentCount: snapshot.segments.length });
+  }, [options.telemetry, snapshot.segments.length, snapshot.status]);
 
   const append = React.useCallback((delta: string) => {
     parser.append(delta);
@@ -95,6 +101,8 @@ export interface StreamingRichMarkdownProps extends Omit<RichMarkdownProps, "con
   citations?: readonly MarkdownFlowCitation[];
   status?: MarkdownFlowStreamStatus;
   error?: string;
+  /** Optional privacy-safe production observability hook. */
+  telemetry?: MarkdownFlowTelemetry;
   /** Chat-friendly anchoring. "if-at-bottom" avoids interrupting a reader who has scrolled away. */
   scrollBehavior?: "none" | "if-at-bottom" | "always";
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
@@ -132,6 +140,7 @@ export function StreamingRichMarkdown({
   citations,
   status = "streaming",
   error,
+  telemetry,
   scrollBehavior = "none",
   scrollContainerRef,
   ...markdownProps
@@ -143,6 +152,10 @@ export function StreamingRichMarkdown({
     return makeSnapshot(parser, status, citations ?? [], [], error);
   }, [citations, content, error, status, stream]);
   const segments = activeStream.segments;
+
+  React.useEffect(() => {
+    emitMarkdownFlowTelemetry(telemetry, { type: "stream", outcome: activeStream.status, segmentCount: segments.length });
+  }, [activeStream.status, segments.length, telemetry]);
 
   React.useEffect(() => {
     const container = scrollContainerRef?.current;

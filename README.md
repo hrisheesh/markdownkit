@@ -481,6 +481,22 @@ The additional release safeguards have a deliberately small distribution impact:
 
 ## Safety and content model
 
+### Production AI checklist
+
+Treat model output as untrusted at every boundary. Use `renderPolicy` to allow only the blocks, artifacts, URLs, dataset IDs, versions, and data sizes appropriate for the product. Do not enable generated HTML, JavaScript, CSS, arbitrary embeds, or arbitrary component selection. Keep external image and link host allowlists in the host application; Mermaid uses Mermaid's strict security level, but it should still be size-limited and treated as untrusted SVG content. Media blocks are previews rather than executable embeds. Custom renderers must not use `dangerouslySetInnerHTML` with model input and must keep every action, permission check, and data resolver host-owned.
+
+`telemetry` on `RichMarkdown` and `StreamingRichMarkdown` receives privacy-safe block, fallback, stream, render-duration, and resolver-outcome events. The package never includes model text, URLs, citation contents, dataset rows, or resolver messages in those events. Attach only a host-generated trace ID or non-sensitive surface name; apply sampling and retention rules in your telemetry system.
+
+Before release, replay captured provider streams (including fence delimiters split across chunks), check pending/error states with a screen reader, and enforce `npm run check:size`. The package budgets the AI entry point at 40 kB ESM / 45 kB CommonJS and keeps completed stream segments stable while only the trailing segment changes. Moderate prompts and completions before display, retain prompts/responses and telemetry only as long as required, isolate resolver caches and authorization by tenant and user, and alert on invalid-block, fallback, denial, and provider-error rates.
+
+### Protocol migration policy
+
+`markdown-flow/v1` remains compatible for all additive changes. A breaking envelope or block-semantics change uses a new protocol name such as `markdown-flow/v2`; never silently reinterpret stored or replayed `v1` responses. During a migration, accept both versions explicitly, keep the old policy and schemas available, emit version-level telemetry, migrate retained fixtures/responses with host authorization intact, then remove the old version only after the published support window. Unknown protocol versions must fail closed with a readable fallback.
+
+### LLM-ready release notes
+
+The AI entry point now has replay coverage for provider chunk boundaries, accessibility coverage for pending and error states, AI bundle budgets, optional privacy-safe telemetry, and documented operational and protocol-migration guidance.
+
 - GitHub-flavored Markdown and mathematical notation are supported.
 - Rendered Markdown is sanitized before output.
 - Custom block renderers receive text-only fenced content; they do not bypass sanitization.
