@@ -60,9 +60,15 @@ export {
   createMarkdownFlowResponseTool,
   markdownFlowResponseSchema,
   markdownFlowResponseTool,
+  normalizeAnthropicStream,
+  normalizeAnthropicStreamChunk,
   normalizeMarkdownFlowStream,
   normalizeMarkdownFlowStreamChunk,
+  normalizeOpenAIStream,
+  normalizeOpenAIStreamChunk,
   readMarkdownFlowSSE,
+  normalizeVercelAIStream,
+  normalizeVercelAIStreamChunk,
 } from "./integration";
 export type {
   MarkdownFlowDatasetInstruction,

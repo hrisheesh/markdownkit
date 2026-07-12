@@ -1,0 +1,8 @@
+@import "katex/dist/katex.min.css";
+
+.markdown-render .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0 0.5rem;
+}

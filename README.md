@@ -65,6 +65,12 @@ Markdown Flow supports React 18 and React 19. Import the stylesheet once in the 
 import "markdown-flow/styles.css";
 ```
 
+When answers can contain math, also import its optional stylesheet. The KaTeX parser and stylesheet load only for content with math delimiters.
+
+```tsx
+import "markdown-flow/math.css";
+```
+
 ## AI quick start
 
 ```tsx
@@ -85,6 +91,7 @@ For token streaming, append provider deltas to the controller and pass it straig
 
 import { AIResponse, useAIResponse } from "markdown-flow/ai";
 import "markdown-flow/styles.css";
+import "markdown-flow/math.css";
 
 export function Assistant() {
   const response = useAIResponse();
@@ -161,6 +168,8 @@ const instructions = createMarkdownFlowInstructions({
 
 Full request-to-response, SSE, RAG, dataset, artifact, security, and operations guidance is in the [documentation](https://github.com/hrisheesh/markdown-flow/tree/main/docs).
 
+Copy-paste provider, Next.js, RAG, trusted-component, and analytics examples are in the [integration guide](https://github.com/hrisheesh/markdown-flow/blob/main/docs/PROVIDER_INTEGRATIONS.md).
+
 ## What a rich response looks like
 
 Normal Markdown remains the default. A model uses a fenced block only when it communicates better than prose.
@@ -230,7 +239,14 @@ The release also passed linting, package build, render verification, size budget
 | `markdown-flow/server` | Server-safe static Markdown rendering |
 | `markdown-flow/ai` | `AIResponse`, `useAIResponse`, streaming, LLM contract, RAG, resolvers, artifacts, and telemetry |
 | `markdown-flow/styles.css` | Full renderer styles |
+| `markdown-flow/math.css` | Optional KaTeX styles and fonts |
 | `markdown-flow/core.css` | Core renderer styles |
+
+## Browser import costs
+
+The published ESM entry points keep Mermaid, charts, syntax highlighting, and math parsing out of the initial answer graph. Those features load only when their corresponding fenced block or math delimiter appears. `styles.css` is math-free; import `math.css` only on surfaces that support math.
+
+Run `npm run build:package && npm run check:size` to generate a current table and enforce the import-graph budgets. The measurement follows package-relative ESM imports, so it is a repeatable package cost check rather than a claim about an application's final bundler output.
 
 ## Security model
 
@@ -263,7 +279,11 @@ Review the package locally before publishing:
 ```bash
 npm run lint
 npm run build:package
+npm run test:unit
 npm run test:render
+npm run test:a11y
+npm run test:security
+npm run test:coverage
 npm run check:size
 npm run test:compat
 npm pack --dry-run

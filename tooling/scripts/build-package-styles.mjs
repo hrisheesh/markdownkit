@@ -12,7 +12,8 @@ await mkdir(path.join(root, "dist"), { recursive: true });
 await cp(path.join(katexRoot, "dist/fonts"), path.join(root, "dist/fonts"), { recursive: true });
 
 for (const [input, output, includeKatexFonts] of [
-  ["src/styles/package.css", "dist/styles.css", true],
+  ["src/styles/package.css", "dist/styles.css", false],
+  ["src/styles/math.css", "dist/math.css", true],
   ["src/styles/core.css", "dist/core.css", false],
 ]) {
   const source = path.join(root, input);

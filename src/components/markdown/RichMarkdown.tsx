@@ -1,11 +1,9 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
-import rehypeKatex from "rehype-katex";
+import ReactMarkdown, { type Components, type Options } from "react-markdown";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
 
 import { DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, type MarkdownFlowRenderPolicy } from "../../ai/protocol";
 import { useMarkdownFlowCitations, type MarkdownFlowCitationResolver, type MarkdownFlowDatasetResolver } from "../../ai/data";
@@ -132,6 +130,8 @@ export interface RichMarkdownProps {
   telemetry?: MarkdownFlowTelemetry;
   /** Overrides for standard Markdown HTML elements. Source Markdown remains sanitized before these render. */
   components?: Components;
+  /** Enables KaTeX parsing when the content contains math delimiters. Set false to keep math as plain Markdown. */
+  enableMath?: boolean;
 }
 
 export interface RichBlockRendererProps {
@@ -144,7 +144,11 @@ export interface RichBlockRendererProps {
 export type RichBlockRenderer = (props: RichBlockRendererProps) => ReactNode;
 export type RichBlockRenderers = Readonly<Record<string, RichBlockRenderer | undefined>>;
 
-export default function RichMarkdown({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components }: RichMarkdownProps) {
+export interface RichMarkdownContentProps extends Omit<RichMarkdownProps, "enableMath"> {
+  mathPlugins?: Pick<Options, "remarkPlugins" | "rehypePlugins">;
+}
+
+export function RichMarkdownContent({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components, mathPlugins }: RichMarkdownContentProps) {
   const citationIds = React.useMemo(() => extractMarkdownFlowCitationIds(content), [content]);
   const resolvedCitations = useMarkdownFlowCitations(citationIds, citations, citationResolver, telemetry);
   const containsTooManyAiBlocks = renderPolicy
@@ -163,7 +167,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
   return (
     <div className="markdown-render chat-markdown min-w-0 text-[15px] font-normal leading-7 text-charcoal sm:text-[16px] sm:leading-8">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
+        remarkPlugins={[remarkGfm, ...(mathPlugins?.remarkPlugins ?? [])]}
         rehypePlugins={[
           [
             rehypeSanitize,
@@ -177,7 +181,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
               },
             },
           ],
-          rehypeKatex,
+          ...(mathPlugins?.rehypePlugins ?? []),
         ]}
         components={{
           h1: ({ children }) => (
@@ -305,5 +309,25 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
         {content}
       </ReactMarkdown>
     </div>
+  );
+}
+
+const MathRichMarkdown = React.lazy(() => import("./MathRichMarkdown"));
+
+function containsMath(content: string) {
+  return /(?:^|[^\\])\$(?:[^$\n]|\\\$)+\$|\\\(|\\\[/.test(content);
+}
+
+/**
+ * Rich Markdown with progressive math loading. Ordinary answers never import
+ * KaTeX's Markdown plugins; a response with a math delimiter loads them on demand.
+ */
+export default function RichMarkdown({ enableMath = true, ...props }: RichMarkdownProps) {
+  if (!enableMath || !containsMath(props.content)) return <RichMarkdownContent {...props} />;
+
+  return (
+    <React.Suspense fallback={<RichMarkdownContent {...props} />}>
+      <MathRichMarkdown {...props} />
+    </React.Suspense>
   );
 }

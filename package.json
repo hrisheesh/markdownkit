@@ -61,11 +61,13 @@
       "require": "./dist/ai/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./math.css": "./dist/math.css",
     "./core.css": "./dist/core.css",
     "./package.json": "./package.json"
   },
   "sideEffects": [
     "./dist/styles.css",
+    "./dist/math.css",
     "./dist/core.css"
   ],
   "scripts": {
@@ -74,11 +76,14 @@
     "start": "next start playground",
     "lint": "eslint --config tooling/eslint.config.mjs .",
     "build:package": "tsup --config tooling/tsup.config.ts && node tooling/scripts/build-package-styles.mjs",
+    "test:unit": "vitest run tests/ai tests/integrations --exclude 'tests/ai/security*.test.*'",
     "test:render": "node tooling/scripts/verify-rendering.mjs",
-    "test:a11y": "node tooling/scripts/verify-rendering.mjs",
+    "test:a11y": "vitest run tests/components/accessibility.test.tsx",
+    "test:security": "vitest run tests/ai/security.test.ts tests/ai/security-renderer.test.tsx",
+    "test:coverage": "vitest run --coverage",
     "check:size": "node tooling/scripts/check-package-size.mjs",
     "test:compat": "node tooling/scripts/test-compatibility.mjs",
-    "test": "npm run lint && npm run build:package && npm run test:render && npm run check:size",
+    "test": "npm run lint && npm run build:package && npm run test:unit && npm run test:render && npm run test:a11y && npm run test:security && npm run check:size",
     "clean:package-maps": "node tooling/scripts/remove-package-source-maps.mjs",
     "prepack": "npm run build:package && npm run clean:package-maps"
   },
@@ -98,19 +103,26 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitest/coverage-v8": "^4.1.10",
+    "axe-core": "^4.12.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "fast-check": "^4.9.0",
+    "jsdom": "^29.1.1",
     "next": "16.2.9",
     "postcss": "^8.5.16",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwindcss": "^4",
     "tsup": "^8.5.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

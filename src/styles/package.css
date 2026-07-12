@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "katex/dist/katex.min.css";
 
 @source "../components/markdown";
 
@@ -43,13 +42,6 @@
 
 .markdown-render > * { min-width: 0; }
 .markdown-render svg { display: block; max-width: 100%; }
-
-.markdown-render .katex-display {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.75rem 0 0.5rem;
-}
 
 .markdown-render .mermaid,
 .markdown-render [id^="mermaid-"] { max-width: 100%; overflow: hidden; }

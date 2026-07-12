@@ -11,6 +11,7 @@ Markdown Flow is a React presentation runtime for Markdown and AI responses. Thi
 | Render server-side Markdown only | [Server rendering](./LLM_INTEGRATION.md#server-rendering) |
 | Stream an LLM response into a chat interface | [Streaming an SSE response](./LLM_INTEGRATION.md#streaming-an-sse-response) |
 | Build a Next.js streaming answer route | [Next.js AI streaming](./NEXTJS_AI_STREAMING.md) |
+| Copy a provider, RAG, component, or analytics integration | [Provider integrations](./PROVIDER_INTEGRATIONS.md) |
 | Send the model the correct response instructions | [Model request contract](./LLM_INTEGRATION.md#building-the-model-request) |
 | Add citations and authorized dataset-backed charts | [RAG, citations, and trusted datasets](./LLM_INTEGRATION.md#rag-citations-and-trusted-datasets) |
 | Build a CRM, analytics, or workflow artifact | [Custom business artifacts](./LLM_INTEGRATION.md#custom-business-artifacts) |

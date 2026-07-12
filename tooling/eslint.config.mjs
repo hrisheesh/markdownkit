@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     "playground/.next/**",
+    "coverage/**",
     "out/**",
     "build/**",
     "dist/**",

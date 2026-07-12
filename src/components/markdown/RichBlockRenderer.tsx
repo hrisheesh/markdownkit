@@ -10,12 +10,24 @@ import type { MarkdownFlowDatasetResolver } from "../../ai/data";
 import type { RichBlockRenderers } from "./RichMarkdown";
 import RichBlockValidationError from "./RichBlockValidationError";
 import RichArtifactBlock from "./RichArtifactBlock";
-import RichChart from "./RichChart";
-import RichDatasetChart from "./RichDatasetChart";
-import RichCodeBlock from "./RichCodeBlock";
 import RichMediaBlock from "./RichMediaBlock";
 import RichStructuredBlock from "./RichStructuredBlock";
-import RichMermaid from "./RichMermaid";
+
+// These renderers carry their own substantial browser dependencies. Keep them
+// outside the default answer graph and only fetch them when the matching fence
+// is actually present in a response.
+const RichChart = React.lazy(() => import("./RichChart"));
+const RichDatasetChart = React.lazy(() => import("./RichDatasetChart"));
+const RichCodeBlock = React.lazy(() => import("./RichCodeBlock"));
+const RichMermaid = React.lazy(() => import("./RichMermaid"));
+
+function FeatureFallback({ label }: { label: string }) {
+  return <div role="status" className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">Loading {label}…</div>;
+}
+
+function LazyFeature({ label, children }: { label: string; children: React.ReactNode }) {
+  return <React.Suspense fallback={<FeatureFallback label={label} />}>{children}</React.Suspense>;
+}
 
 export interface RichBlockRendererProps {
   language: string;
@@ -61,15 +73,15 @@ export default function RichBlockRenderer({ language, code, blockRenderers, rend
   }
   const blockRenderer = blockRenderers?.[language];
   if (blockRenderer) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} />{blockRenderer({ language, code })}</>;
-  if (language === "mermaid") return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichMermaid chart={code} /></>;
+  if (language === "mermaid") return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="diagram"><RichMermaid chart={code} /></LazyFeature></>;
   if (language === "chart") {
     if (hasDatasetReference(code)) {
       if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require a render policy." blockType="chart" telemetry={telemetry} />;
-      return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichDatasetChart configStr={code} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></>;
+      return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="chart"><RichDatasetChart configStr={code} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></LazyFeature></>;
     }
-    return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichChart configStr={code} /></>;
+    return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="chart"><RichChart configStr={code} /></LazyFeature></>;
   }
   if (["embed", "image", "map"].includes(language)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichMediaBlock type={language as "embed" | "image" | "map"} configStr={code} /></>;
   if (["callout", "metrics", "timeline", "steps", "comparison", "accordion", "tabs", "cards", "filetree", "progress", "checklist", "status", "quote"].includes(language)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichStructuredBlock type={language as "callout" | "metrics" | "timeline" | "steps" | "comparison" | "accordion" | "tabs" | "cards" | "filetree" | "progress" | "checklist" | "status" | "quote"} configStr={code} /></>;
-  return <RichCodeBlock language={language} code={code} />;
+  return <LazyFeature label="code highlighter"><RichCodeBlock language={language} code={code} /></LazyFeature>;
 }

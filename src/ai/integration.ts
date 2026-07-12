@@ -145,11 +145,99 @@ export function normalizeMarkdownFlowStreamChunk(chunk: unknown): MarkdownFlowSt
   return [];
 }
 
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+}
+
+/**
+ * Adapts OpenAI Chat Completions and Responses API event shapes without
+ * importing an OpenAI SDK. Provider credentials and request construction stay
+ * on the server; this only converts an already-received event into UI events.
+ */
+export function normalizeOpenAIStreamChunk(chunk: unknown): MarkdownFlowStreamEvent[] {
+  const value = objectValue(chunk);
+  if (!value) return normalizeMarkdownFlowStreamChunk(chunk);
+
+  if (value.type === "response.output_text.delta") return textEvent(value.delta);
+  if (value.type === "response.completed") return [{ type: "complete" }];
+  if (value.type === "error") return typeof value.message === "string" ? [{ type: "error", message: value.message }] : [];
+  if (typeof value.type === "string" && value.type.includes("function_call")) return [];
+
+  if (Array.isArray(value.choices)) {
+    const events = normalizeMarkdownFlowStreamChunk(value);
+    const finished = value.choices.some((choice) => {
+      const item = objectValue(choice);
+      return item?.finish_reason !== null && item?.finish_reason !== undefined;
+    });
+    return finished ? [...events, { type: "complete" }] : events;
+  }
+
+  return normalizeMarkdownFlowStreamChunk(chunk);
+}
+
+/**
+ * Adapts Anthropic Messages streaming events without importing an Anthropic
+ * SDK. Tool-use JSON deltas are deliberately ignored: Markdown Flow only
+ * renders text that the host chooses to pass through.
+ */
+export function normalizeAnthropicStreamChunk(chunk: unknown): MarkdownFlowStreamEvent[] {
+  const value = objectValue(chunk);
+  if (!value) return normalizeMarkdownFlowStreamChunk(chunk);
+  if (value.type === "message_stop") return [{ type: "complete" }];
+  if (value.type === "error") {
+    const error = objectValue(value.error);
+    return typeof error?.message === "string" ? [{ type: "error", message: error.message }] : [];
+  }
+  if (value.type === "content_block_delta") {
+    const delta = objectValue(value.delta);
+    return delta?.type === "text_delta" ? textEvent(delta.text) : [];
+  }
+  return normalizeMarkdownFlowStreamChunk(chunk);
+}
+
+/**
+ * Adapts Vercel AI SDK text-stream parts without importing the AI SDK. Both
+ * current `text-delta` parts and the common `textDelta` shape are supported.
+ */
+export function normalizeVercelAIStreamChunk(chunk: unknown): MarkdownFlowStreamEvent[] {
+  const value = objectValue(chunk);
+  if (!value) return normalizeMarkdownFlowStreamChunk(chunk);
+  if (value.type === "text-delta") return textEvent(value.delta ?? value.textDelta);
+  if (value.type === "finish" || value.type === "finish-step") return [{ type: "complete" }];
+  if (typeof value.type === "string" && value.type.startsWith("tool-")) return [];
+  if (value.type === "error") return typeof value.error === "string"
+    ? [{ type: "error", message: value.error }]
+    : typeof value.message === "string" ? [{ type: "error", message: value.message }] : [];
+  return normalizeMarkdownFlowStreamChunk(chunk);
+}
+
 /** Normalizes any async iterable of provider chunks into Markdown Flow events. */
 export async function* normalizeMarkdownFlowStream(chunks: AsyncIterable<unknown>): AsyncGenerator<MarkdownFlowStreamEvent> {
   for await (const chunk of chunks) {
     yield* normalizeMarkdownFlowStreamChunk(chunk);
   }
+}
+
+async function* normalizeProviderStream(
+  chunks: AsyncIterable<unknown>,
+  normalize: (chunk: unknown) => MarkdownFlowStreamEvent[],
+): AsyncGenerator<MarkdownFlowStreamEvent> {
+  for await (const chunk of chunks) yield* normalize(chunk);
+}
+
+/** Converts an OpenAI SDK async iterable into provider-neutral UI events. */
+export function normalizeOpenAIStream(chunks: AsyncIterable<unknown>): AsyncGenerator<MarkdownFlowStreamEvent> {
+  return normalizeProviderStream(chunks, normalizeOpenAIStreamChunk);
+}
+
+/** Converts an Anthropic SDK async iterable into provider-neutral UI events. */
+export function normalizeAnthropicStream(chunks: AsyncIterable<unknown>): AsyncGenerator<MarkdownFlowStreamEvent> {
+  return normalizeProviderStream(chunks, normalizeAnthropicStreamChunk);
+}
+
+/** Converts a Vercel AI SDK async iterable into provider-neutral UI events. */
+export function normalizeVercelAIStream(chunks: AsyncIterable<unknown>): AsyncGenerator<MarkdownFlowStreamEvent> {
+  return normalizeProviderStream(chunks, normalizeVercelAIStreamChunk);
 }
 
 function parseSseEvent(data: string): MarkdownFlowStreamEvent[] {
