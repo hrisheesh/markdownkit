@@ -1,4 +1,4 @@
-# Markdown Flow integration guide
+# Markdown Flow integration guide: React, streaming AI, RAG, and trusted UI
 
 This guide shows how to use Markdown Flow from basic Markdown rendering through production LLM, RAG, and business-artifact integrations. The examples use TypeScript and React; the LLM transport is deliberately provider-neutral.
 
@@ -539,21 +539,26 @@ Markdown Flow sanitizes presentation input and provides validation/fallbacks. It
 
 ## Publishing a release
 
+Before publishing, update `package.json` and [CHANGELOG.md](../CHANGELOG.md), then run the same release gates that protect `main`:
+
 ```bash
 npm run lint
 npm run build:package
+npm run test:unit
 npm run test:render
+npm run test:a11y
+npm run test:security
 npm run check:size
 npm run test:compat
 npm pack --dry-run
 ```
 
-Then, after review:
+Review the dry-run contents: the tarball should contain only the package distribution, package metadata, README, and license. Then, after review:
 
 ```bash
 npm login
 npm publish --access public
-npm view markdown-flow@0.1.3 version
+npm view markdown-flow@0.2.0 version
 ```
 
 The `prepack` lifecycle rebuilds the distribution and removes source maps from the public npm tarball. Local development builds still generate them.

@@ -31,8 +31,17 @@ jobs:
       - name: Build package
         run: npm run build:package
 
-      - name: Run render and accessibility contracts
+      - name: Run unit and provider integration tests
+        run: npm run test:unit
+
+      - name: Run rendering contracts
         run: npm run test:render
+
+      - name: Run accessibility checks
+        run: npm run test:a11y
+
+      - name: Run security checks
+        run: npm run test:security
 
       - name: Enforce package-size budgets
         run: npm run check:size

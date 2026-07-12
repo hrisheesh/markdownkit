@@ -10,9 +10,11 @@ import {
   type MarkdownFlowStreamSegment,
   type MarkdownFlowStreamSnapshot,
   type MarkdownFlowStreamStatus,
+  type MarkdownFlowStreamDiagnostics,
 } from "./stream";
 import type { MarkdownFlowCitation, MarkdownFlowDataset, MarkdownFlowResponse, MarkdownFlowStreamEvent } from "./protocol";
 import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "./telemetry";
+import { AIResponseInspector, type AIResponseInspectorEvent } from "./AIResponseInspector";
 
 export interface UseMarkdownFlowStreamOptions {
   citations?: readonly MarkdownFlowCitation[];
@@ -37,9 +39,10 @@ function makeSnapshot(
   citations: readonly MarkdownFlowCitation[],
   datasets: readonly MarkdownFlowDataset[],
   error?: string,
+  diagnostics?: MarkdownFlowStreamDiagnostics,
 ): MarkdownFlowStreamSnapshot {
   const segments = parser.getSegments();
-  return { content: segments.map((segment) => segment.content).join(""), segments, status, error, citations, datasets };
+  return { content: segments.map((segment) => segment.content).join(""), segments, status, error, citations, datasets, diagnostics };
 }
 
 /** State and controls for provider-neutral, incrementally rendered Markdown streams. */
@@ -50,11 +53,28 @@ export function useMarkdownFlowStream(initialContent = "", options: UseMarkdownF
     return nextParser;
   });
 
+  const diagnostics = React.useRef<MarkdownFlowStreamDiagnostics>({
+    chunkCount: initialContent ? 1 : 0,
+    characterCount: initialContent.length,
+    startedAt: 0,
+    updatedAt: 0,
+  });
+  const recordChunk = React.useCallback((length: number) => {
+    diagnostics.current = {
+      ...diagnostics.current,
+      chunkCount: diagnostics.current.chunkCount + 1,
+      characterCount: diagnostics.current.characterCount + length,
+      startedAt: diagnostics.current.startedAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+  }, []);
   const [snapshot, setSnapshot] = React.useState(() => makeSnapshot(
     parser,
     initialContent ? "complete" : "streaming",
     options.citations ?? [],
     options.datasets ?? [],
+    undefined,
+    { chunkCount: initialContent ? 1 : 0, characterCount: initialContent.length, startedAt: 0, updatedAt: 0 },
   ));
 
   React.useEffect(() => {
@@ -63,31 +83,36 @@ export function useMarkdownFlowStream(initialContent = "", options: UseMarkdownF
 
   const append = React.useCallback((delta: string) => {
     parser.append(delta);
-    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets));
-  }, [parser]);
+    recordChunk(delta.length);
+    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets, undefined, diagnostics.current));
+  }, [parser, recordChunk]);
   const replace = React.useCallback((content: string) => {
     parser.reset(content);
-    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets));
+    diagnostics.current = { chunkCount: content ? 1 : 0, characterCount: content.length, startedAt: Date.now(), updatedAt: Date.now() };
+    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets, undefined, diagnostics.current));
   }, [parser]);
   const apply = React.useCallback((event: MarkdownFlowStreamEvent) => {
-    setSnapshot((previous) => applyMarkdownFlowStreamEvent(parser, previous, event));
-  }, [parser]);
+    if (event.type === "text") recordChunk(event.delta.length);
+    setSnapshot((previous) => ({ ...applyMarkdownFlowStreamEvent(parser, previous, event), diagnostics: diagnostics.current }));
+  }, [parser, recordChunk]);
   const applyResponse = React.useCallback((response: MarkdownFlowResponse) => {
-    setSnapshot(() => applyMarkdownFlowResponse(parser, response));
+    diagnostics.current = { chunkCount: 1, characterCount: response.content.length, startedAt: Date.now(), updatedAt: Date.now() };
+    setSnapshot(() => ({ ...applyMarkdownFlowResponse(parser, response), diagnostics: diagnostics.current }));
   }, [parser]);
   const complete = React.useCallback(() => {
     parser.finish();
-    setSnapshot((previous) => makeSnapshot(parser, "complete", previous.citations, previous.datasets));
+    setSnapshot((previous) => makeSnapshot(parser, "complete", previous.citations, previous.datasets, undefined, diagnostics.current));
   }, [parser]);
   const fail = React.useCallback((message: string) => {
-    setSnapshot((previous) => makeSnapshot(parser, "error", previous.citations, previous.datasets, message));
+    setSnapshot((previous) => makeSnapshot(parser, "error", previous.citations, previous.datasets, message, diagnostics.current));
   }, [parser]);
   const cancel = React.useCallback(() => {
-    setSnapshot((previous) => makeSnapshot(parser, "cancelled", previous.citations, previous.datasets));
+    setSnapshot((previous) => makeSnapshot(parser, "cancelled", previous.citations, previous.datasets, undefined, diagnostics.current));
   }, [parser]);
   const retry = React.useCallback((content = "") => {
     parser.reset(content);
-    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets));
+    diagnostics.current = { chunkCount: content ? 1 : 0, characterCount: content.length, startedAt: Date.now(), updatedAt: Date.now() };
+    setSnapshot((previous) => makeSnapshot(parser, "streaming", previous.citations, previous.datasets, undefined, diagnostics.current));
   }, [parser]);
 
   return { ...snapshot, append, replace, apply, applyResponse, complete, fail, cancel, retry };
@@ -106,6 +131,13 @@ export interface StreamingRichMarkdownProps extends Omit<RichMarkdownProps, "con
   /** Chat-friendly anchoring. "if-at-bottom" avoids interrupting a reader who has scrolled away. */
   scrollBehavior?: "none" | "if-at-bottom" | "always";
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  /** Shows local parser state in development; stripped from production output. */
+  debug?: boolean;
+}
+
+function shallowEqualProps(left: Record<string, unknown>, right: Record<string, unknown>): boolean {
+  const leftKeys = Object.keys(left);
+  return leftKeys.length === Object.keys(right).length && leftKeys.every((key) => left[key] === right[key]);
 }
 
 const RenderSegment = React.memo(function RenderSegment({
@@ -128,7 +160,9 @@ const RenderSegment = React.memo(function RenderSegment({
   }
 
   return <RichMarkdown {...markdownProps} citations={markdownProps.citations ? [...markdownProps.citations] : undefined} content={segment.content} />;
-});
+}, (previous, next) => previous.segment === next.segment
+  && previous.status === next.status
+  && shallowEqualProps(previous.markdownProps, next.markdownProps));
 
 /**
  * Renders an LLM response as stable Markdown segments. Completed rich blocks
@@ -143,6 +177,7 @@ export function StreamingRichMarkdown({
   telemetry,
   scrollBehavior = "none",
   scrollContainerRef,
+  debug = false,
   ...markdownProps
 }: StreamingRichMarkdownProps) {
   const activeStream = React.useMemo(() => {
@@ -152,10 +187,21 @@ export function StreamingRichMarkdown({
     return makeSnapshot(parser, status, citations ?? [], [], error);
   }, [citations, content, error, status, stream]);
   const segments = activeStream.segments;
+  const [debugEvents, setDebugEvents] = React.useState<readonly AIResponseInspectorEvent[]>([]);
+  const activeTelemetry = React.useMemo<MarkdownFlowTelemetry | undefined>(() => {
+    if (!debug || process.env.NODE_ENV === "production") return telemetry;
+    return {
+      context: telemetry?.context,
+      track(event, context) {
+        setDebugEvents((previous) => [...previous.slice(-24), { event, timestamp: Date.now() }]);
+        telemetry?.track(event, context);
+      },
+    };
+  }, [debug, telemetry]);
 
   React.useEffect(() => {
-    emitMarkdownFlowTelemetry(telemetry, { type: "stream", outcome: activeStream.status, segmentCount: segments.length });
-  }, [activeStream.status, segments.length, telemetry]);
+    emitMarkdownFlowTelemetry(activeTelemetry, { type: "stream", outcome: activeStream.status, segmentCount: segments.length });
+  }, [activeStream.status, activeTelemetry, segments.length]);
 
   React.useEffect(() => {
     const container = scrollContainerRef?.current;
@@ -166,8 +212,9 @@ export function StreamingRichMarkdown({
 
   return (
     <div aria-live="polite" aria-busy={activeStream.status === "streaming"}>
-      {segments.map((segment) => <RenderSegment key={segment.id} segment={segment} markdownProps={{ ...markdownProps, citations: activeStream.citations }} status={activeStream.status} />)}
+      {segments.map((segment) => <RenderSegment key={segment.id} segment={segment} markdownProps={{ ...markdownProps, citations: activeStream.citations, telemetry: activeTelemetry }} status={activeStream.status} />)}
       {activeStream.error && <div role="alert" className="my-4 text-sm text-[#b42318]">{activeStream.error}</div>}
+      {debug && <AIResponseInspector snapshot={activeStream} events={debugEvents} />}
     </div>
   );
 }

@@ -1,107 +1,117 @@
-# Markdown Flow
+# Markdown Flow — Markdown and AI response UI for React
 
-**The React renderer for AI answers.**
+<p align="center">
+  <a href="https://github.com/hrisheesh/markdown-flow">
+    <img src="https://raw.githubusercontent.com/hrisheesh/markdown-flow/main/.github/assets/markdown-flow-hero.svg" alt="Markdown Flow rendering a polished AI answer with a chart and metrics" width="800" />
+  </a>
+</p>
 
-Markdown Flow turns ordinary Markdown into a finished product surface: readable prose, tables, mathematics, code, diagrams, charts, citations, and trusted application artifacts. It is built for React and Next.js teams that need a dependable renderer today—and a controlled, real-time answer UI when they add AI.
-
-> The model produces compact semantic Markdown. Your product keeps control of data, permissions, components, and actions.
+<p align="center">
+  <strong>Turn Markdown and streamed AI output into a polished, controlled React experience.</strong><br />
+  Markdown, citations, charts, diagrams, and trusted product components—without asking a model to generate your UI.
+</p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/markdown-flow"><img src="https://img.shields.io/npm/v/markdown-flow?color=4c5be8&label=npm" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/markdown-flow"><img src="https://img.shields.io/npm/dm/markdown-flow?color=171717" alt="npm downloads" /></a>
-  <a href="https://github.com/hrisheesh/markdown-flow"><img src="https://img.shields.io/badge/React-18%2B-149eca?logo=react" alt="React 18 or later" /></a>
-  <a href="https://github.com/hrisheesh/markdown-flow"><img src="https://img.shields.io/badge/TypeScript-ready-3178c6?logo=typescript" alt="TypeScript ready" /></a>
+  <a href="https://www.npmjs.com/package/markdown-flow"><img src="https://img.shields.io/npm/dm/markdown-flow?color=171717" alt="npm monthly downloads" /></a>
+  <a href="https://github.com/hrisheesh/markdown-flow/actions"><img src="https://img.shields.io/github/actions/workflow/status/hrisheesh/markdown-flow/package-quality.yml?branch=main&label=checks" alt="package checks" /></a>
+  <a href="https://github.com/hrisheesh/markdown-flow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="MIT license" /></a>
+  <a href="https://github.com/hrisheesh/markdown-flow"><img src="https://img.shields.io/badge/React-18%20%7C%2019-149eca?logo=react" alt="React 18 and React 19" /></a>
 </p>
 
-## Why it exists
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#why-markdown-flow">Why Markdown Flow</a> ·
+  <a href="#ai-responses-in-three-steps">AI responses</a> ·
+  <a href="./docs/README.md">Documentation</a> ·
+  <a href="./CHANGELOG.md">Changelog</a>
+</p>
 
-Markdown is an excellent authoring format, but generic renderers stop at rendering text. AI products introduce a harder problem: an answer needs to stream smoothly, cite evidence, visualize approved data, and occasionally show product-specific UI—without asking the model to generate a webpage or run application code.
+## The problem
 
-Generating HTML, JSX, spreadsheets, or mini-apps from a model is an expensive and fragile interface. It wastes output tokens on presentation details, breaks easily during streaming, and gives untrusted text too much control over the product surface.
+`react-markdown` solves Markdown-to-HTML. AI products need more: smooth streaming, grounded citations, approved charts, and domain UI—while model output remains untrusted.
 
-Markdown Flow was created to make that boundary explicit:
+Building that yourself usually means stitching together a renderer, stream state, fence parser, citation system, chart validation, component allowlist, and security boundaries. Markdown Flow is the React presentation layer that brings those pieces together without becoming your AI backend.
 
-```text
-Your retrieval and application data
-        ↓
-LLM emits Markdown + approved JSON blocks
-        ↓
-Markdown Flow validates and streams stable UI
-        ↓
-Trusted React components, citations, charts, and artifacts
+```mermaid
+flowchart LR
+  A[Your server<br/>auth + retrieval] --> B[LLM emits Markdown<br/>and approved JSON blocks]
+  B --> C[Markdown Flow<br/>validates + streams]
+  C --> D[Trusted React UI<br/>citations + charts + artifacts]
 ```
 
-The model describes intent in compact Markdown and approved JSON blocks. Markdown Flow validates that intent and renders it with trusted React code. Your application remains the authority for every piece of data, every permission, and every action.
+The model describes intent. Your application owns the data, permissions, actions, and React components.
 
-## What makes it different
-
-| Instead of | Markdown Flow does |
-| --- | --- |
-| A basic Markdown renderer that only turns text into HTML | Delivers a complete React reading surface with rich blocks, charts, diagrams, math, citations, and safe fallbacks. |
-| Asking an LLM to generate HTML, JSX, or a spreadsheet | Uses compact Markdown plus an intentionally small, versioned response contract. |
-| Re-rendering the entire answer for every streamed token | Keeps completed sections mounted and holds incomplete rich fences in an accessible pending state. |
-| Putting private analytics rows or source text into every prompt | Lets models reference host-authorized citations and datasets by ID; the app resolves them securely. |
-| Letting a model choose arbitrary components or execute generated code | Uses a host-registered, schema-validated, versioned artifact registry. |
-
-This is the difference between rendering model output and operating a reliable AI answer surface.
-
-## Built for real product work
-
-- **Knowledge and support assistants** — stream grounded answers with source citations and readable technical content.
-- **RAG applications** — keep retrieval and source permissions in your application while presenting cited results clearly.
-- **Analytics copilots** — let a model select an approved chart or metric view without exposing entire datasets in prompt context.
-- **Internal business tools** — render account health, incident, order, or workflow artifacts using trusted host components.
-- **Documentation and content products** — render polished Markdown, diagrams, code, math, and media in React or Next.js.
-
-## Install
+## Quick start
 
 ```bash
 npm install markdown-flow
 ```
 
-Markdown Flow supports React 18 and React 19. Import the stylesheet once in the client application shell:
+Import the stylesheet once, then render Markdown:
 
 ```tsx
+import { RichMarkdown } from "markdown-flow";
 import "markdown-flow/styles.css";
+
+export function Article({ content }: { content: string }) {
+  return <RichMarkdown content={content} />;
+}
 ```
 
-When answers can contain math, also import its optional stylesheet. The KaTeX parser and stylesheet load only for content with math delimiters.
+For math, also import the optional stylesheet:
 
 ```tsx
 import "markdown-flow/math.css";
 ```
 
-## AI quick start
+## Why Markdown Flow
+
+| What you need | Markdown Flow gives you |
+| --- | --- |
+| A great reading surface | Safe GFM, tables, code, math, Mermaid, charts, media, citations, and structured blocks. |
+| An AI answer UI | Incremental rendering that preserves completed sections and holds incomplete rich fences in a clear pending state. |
+| Grounded RAG answers | Host-owned sources and dataset resolvers; citation text never grants data access. |
+| Product-specific UI | Explicitly registered, schema-validated, versioned React artifacts—not model-generated JSX or code. |
+| A practical boundary | A renderer and response contract, not a provider SDK, vector database, or backend framework. |
+
+<details>
+<summary><strong>What does “controlled” mean?</strong></summary>
+
+Model output is untrusted. Markdown Flow sanitizes Markdown and validates approved JSON blocks against a narrow render policy. Your server still owns authentication, retrieval, authorization, provider keys, and mutations. It never executes model-generated JavaScript, JSX, CSS, or arbitrary components.
+
+</details>
+
+## AI responses in three steps
+
+### 1. Render a completed answer
 
 ```tsx
 import { AIResponse } from "markdown-flow/ai";
 import "markdown-flow/styles.css";
 
 export function AssistantAnswer({ content }: { content: string }) {
-  return <AIResponse content={content} />;
+  return <AIResponse content={content} preset="chat" />;
 }
 ```
 
-`AIResponse` renders ordinary Markdown immediately and keeps incomplete Markdown Flow blocks in a stable pending state while a response streams. It defaults to the conservative `chat` preset.
-
-For token streaming, append provider deltas to the controller and pass it straight to the renderer:
+### 2. Append streaming text
 
 ```tsx
 "use client";
 
 import { AIResponse, useAIResponse } from "markdown-flow/ai";
-import "markdown-flow/styles.css";
-import "markdown-flow/math.css";
 
 export function Assistant() {
   const response = useAIResponse();
 
-  // Pass provider text to response.append(delta), then call response.complete().
+  // Send each provider text delta to response.append(delta).
+  // Call response.complete() when the provider finishes.
   return <AIResponse stream={response} preset="technical" scrollBehavior="if-at-bottom" />;
 }
 ```
 
-Sources stay host-owned and are displayed as citation badges. Trusted product UI is registered explicitly; the model can only request the component name and a validated object input.
+### 3. Keep sources and components host-owned
 
 ```tsx
 import { AIResponse } from "markdown-flow/ai";
@@ -118,7 +128,7 @@ function OrderCard({ input }: { input: { id: string } }) {
 />;
 ```
 
-That component is available only through this fenced envelope:
+The model may request that registered component only through a fenced envelope:
 
 ````md
 ```artifact
@@ -126,33 +136,33 @@ That component is available only through this fenced envelope:
 ```
 ````
 
-Use `minimal`, `chat`, `rag`, `technical`, or `analytics` to choose the built-in block capability set. Pass `policy` when your product needs stricter limits or additional approved blocks.
+It cannot choose arbitrary components, execute code, or fetch your application data.
 
-## Markdown rendering
+## Built for the response surfaces people actually ship
 
-`RichMarkdown` remains available for documents and content products. It supports GitHub-flavored Markdown, tables, syntax-highlighted code, KaTeX math, Mermaid, charts, media, structured blocks, and citations.
+- **Support and knowledge assistants** — streamed, readable answers with citations and technical content.
+- **RAG applications** — retrieval stays on your server; readers get clear, source-backed answers.
+- **Analytics copilots** — render approved metrics and charts without placing complete datasets in the prompt.
+- **Internal tools** — show account, incident, order, or workflow cards through trusted React components.
+- **Documentation products** — give Markdown, math, code, diagrams, and media one consistent visual language.
 
-```tsx
-import { RichMarkdown } from "markdown-flow";
-import "markdown-flow/styles.css";
+## Pick the smallest entry point
 
-export function Article({ content }: { content: string }) {
-  return <RichMarkdown content={content} />;
-}
-```
+| Import | Use it for |
+| --- | --- |
+| `markdown-flow` | Full rich Markdown rendering. |
+| `markdown-flow/core` | Lightweight sanitized GitHub-flavored Markdown. |
+| `markdown-flow/server` | Server-safe, Markdown-only rendering. |
+| `markdown-flow/ai` | `AIResponse`, streaming, LLM contract helpers, RAG metadata, policies, and trusted artifacts. |
+| `markdown-flow/styles.css` | Full renderer styles. |
+| `markdown-flow/math.css` | Optional KaTeX styles and fonts. |
+| `markdown-flow/core.css` | Core renderer styles. |
 
-For a compact, server-safe Markdown-only renderer:
+Mermaid, charts, syntax highlighting, and math parsing stay out of the initial browser graph until content needs them. The package size check measures the reachable package graph; your final application bundle will depend on your bundler and imports.
 
-```tsx
-import { StaticMarkdown } from "markdown-flow/server";
-import "markdown-flow/core.css";
+## Give the model a compact contract
 
-export function Document({ content }: { content: string }) {
-  return <StaticMarkdown content={content} />;
-}
-```
-
-The model should receive Markdown Flow's contract. Do not ask it to emit HTML, JSX, or arbitrary component names.
+Do not ask a model to generate HTML, JSX, spreadsheets, or mini-apps. Send Markdown Flow’s provider-neutral instructions instead:
 
 ```ts
 import { createMarkdownFlowInstructions } from "markdown-flow/ai";
@@ -162,143 +172,63 @@ const instructions = createMarkdownFlowInstructions({
   availableDatasets: [{ id: "revenue-by-month", description: "Authorized monthly revenue" }],
   citations: sources.map(({ id, filename }) => ({ id, filename })),
 });
-
-// Add `instructions` to your provider's system/developer instructions.
 ```
 
-Full request-to-response, SSE, RAG, dataset, artifact, security, and operations guidance is in the [documentation](https://github.com/hrisheesh/markdown-flow/tree/main/docs).
-
-Copy-paste provider, Next.js, RAG, trusted-component, and analytics examples are in the [integration guide](https://github.com/hrisheesh/markdown-flow/blob/main/docs/PROVIDER_INTEGRATIONS.md).
-
-## What a rich response looks like
-
-Normal Markdown remains the default. A model uses a fenced block only when it communicates better than prose.
-
-````md
-Revenue increased 18% quarter over quarter [cite:revenue-q2].
-
-```chart
-{
-  "type": "bar",
-  "title": "Quarterly revenue",
-  "data": [
-    { "quarter": "Q1", "revenue": 120 },
-    { "quarter": "Q2", "revenue": 142 }
-  ],
-  "x": "quarter",
-  "y": "revenue"
-}
-```
-````
-
-For large or sensitive data, the model references a host-owned dataset instead of serializing rows into its answer. The application validates the ID and fields, performs authorization, and resolves the data.
-
-## 0.1.3 release: AI-ready without a renderer regression
-
-`0.1.3` introduces the `markdown-flow/ai` integration surface:
-
-- versioned `markdown-flow/v1` response and stream contracts;
-- concise provider-neutral instructions and a structured-output tool/schema;
-- strict built-in block validation and render policies;
-- incremental streaming parser, pending states, cancellation, retry, and scroll anchoring;
-- citation and dataset resolver interfaces for RAG;
-- host-owned custom artifact registry with schema, authorization, resolver, fallback, and version controls;
-- privacy-safe telemetry hooks;
-- source maps excluded from the public npm tarball while retained for ordinary local builds.
-
-### Controlled stress test: 0.1.2 → 0.1.3
-
-The comparison used the published `0.1.2` package and the packed `0.1.3` candidate in the same React 19.2.4 server-rendering environment. Package order alternated across rounds to reduce warm-up bias. These numbers are directional measurements, not a guarantee for every product.
-
-| Workload | 0.1.3 change | Assessment |
-| --- | ---: | --- |
-| Short Markdown | +2.1% render time | Benchmark noise / effectively neutral |
-| Long document | -0.6% render time | Slightly faster |
-| Tables | -0.4% render time | Slightly faster |
-| Rich blocks | +2.6% render time | Benchmark noise / effectively neutral |
-| Charts | +3.6% render time | Benchmark noise / effectively neutral |
-
-AI-specific checks for `0.1.3`:
-
-| Check | Result |
-| --- | ---: |
-| Fence parser, 13.7 kB delivered one character at a time | ~0.207 ms median |
-| Strict block validation | ~485,000 validations/sec |
-| React compatibility | React 18.3.1 and React 19.2.4 passed |
-| npm package size | 913.9 kB → 907.8 kB compressed (-0.67%) |
-| Public source maps | Present in 0.1.2 → none in 0.1.3 |
-
-The release also passed linting, package build, render verification, size budgets, compatibility testing, and package-content verification.
-
-## Package entry points
-
-| Import | Use it for |
-| --- | --- |
-| `markdown-flow` | Full rich Markdown rendering and strict policies |
-| `markdown-flow/core` | Lightweight sanitized GFM rendering |
-| `markdown-flow/server` | Server-safe static Markdown rendering |
-| `markdown-flow/ai` | `AIResponse`, `useAIResponse`, streaming, LLM contract, RAG, resolvers, artifacts, and telemetry |
-| `markdown-flow/styles.css` | Full renderer styles |
-| `markdown-flow/math.css` | Optional KaTeX styles and fonts |
-| `markdown-flow/core.css` | Core renderer styles |
-
-## Browser import costs
-
-The published ESM entry points keep Mermaid, charts, syntax highlighting, and math parsing out of the initial answer graph. Those features load only when their corresponding fenced block or math delimiter appears. `styles.css` is math-free; import `math.css` only on surfaces that support math.
-
-Run `npm run build:package && npm run check:size` to generate a current table and enforce the import-graph budgets. The measurement follows package-relative ESM imports, so it is a repeatable package cost check rather than a claim about an application's final bundler output.
-
-## Security model
-
-Markdown Flow is a presentation layer, not an authorization system. Treat model output as untrusted.
-
-- Keep provider keys, retrieval, tenant checks, and dataset access on your server.
-- Use `renderPolicy` to allow only the blocks, data IDs, fields, URLs, and limits appropriate to each surface.
-- Supply citations and datasets as trusted metadata; never let the model invent authority.
-- Register custom artifacts explicitly. They validate input and are host-rendered; model output never executes code.
-- Monitor invalid blocks, fallbacks, errors, and resolver outcomes through optional privacy-safe telemetry.
-
-See the [security and production checklist](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#security-and-production-checklist) before shipping an AI-facing experience.
+The response stays compact and inspectable. Your app resolves citations and datasets only after its own authorization checks.
 
 ## Documentation
 
-- [Documentation overview](https://github.com/hrisheesh/markdown-flow/tree/main/docs)
-- [React Markdown renderer](https://github.com/hrisheesh/markdown-flow/blob/main/docs/REACT_MARKDOWN_RENDERER.md)
-- [Next.js AI streaming](https://github.com/hrisheesh/markdown-flow/blob/main/docs/NEXTJS_AI_STREAMING.md)
-- [RAG citations and trusted artifacts](https://github.com/hrisheesh/markdown-flow/blob/main/docs/RAG_CITATIONS_AND_ARTIFACTS.md)
-- [Complete integration guide](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md)
-- [Streaming and SSE](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#streaming-an-sse-response)
-- [RAG, citations, and datasets](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#rag-citations-and-trusted-datasets)
-- [Custom business artifacts](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#custom-business-artifacts)
-- [API reference](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#api-reference)
+| If you want to… | Start here |
+| --- | --- |
+| Render polished Markdown in React or Next.js | [React Markdown renderer](./docs/REACT_MARKDOWN_RENDERER.md) |
+| Stream an LLM answer | [Streaming Markdown in React](./docs/STREAMING_MARKDOWN_REACT.md) |
+| Build a Next.js route | [Next.js AI streaming](./docs/NEXTJS_AI_STREAMING.md) |
+| Use OpenAI, Anthropic, Vercel AI SDK, or generic SSE | [Provider integrations](./docs/PROVIDER_INTEGRATIONS.md) |
+| Build RAG citations, charts, and trusted artifacts | [RAG citations and artifacts](./docs/RAG_CITATIONS_AND_ARTIFACTS.md) |
+| Review the full API, policies, and production checklist | [Integration guide](./docs/LLM_INTEGRATION.md) |
+| Understand checks, support, and bundle methodology | [Quality and compatibility](./docs/QUALITY.md) |
 
-## Release commands
+## Quality and security
 
-Review the package locally before publishing:
+- Verified packed-package consumers: React 18.3.1 and React 19.2.4.
+- Automated checks cover stream chunk boundaries, malformed blocks, policies, citations, resolver/artifact boundaries, accessibility, security, rendering, compatibility, and package size.
+- `npm run bench:streaming` verifies exact streamed source preservation and stable completed parser segments.
+- `debug` provides a development-only local inspector for stream state; it never renders in production or emits telemetry.
 
-```bash
-npm run lint
-npm run build:package
-npm run test:unit
-npm run test:render
-npm run test:a11y
-npm run test:security
-npm run test:coverage
-npm run check:size
-npm run test:compat
-npm pack --dry-run
-```
+### 0.1.3 → 0.2.0 extreme streaming stress test
 
-Publish only after review:
+Two sequential five-minute extreme stream-parser runs compared the committed 0.1.3 baseline (`6681a60`) with the 0.2.0 candidate. The workload used randomized 1–96-character chunks over repeated mixed Markdown and structured-block responses.
 
-```bash
-npm login
-npm publish --access public
-npm view markdown-flow@0.1.3 version
-```
+| Metric | 0.1.3 | 0.2.0 candidate | Change |
+| --- | ---: | ---: | ---: |
+| Duration | 300.013s | 300.013s | — |
+| Streams completed | 508,503 | 500,516 | -1.6% |
+| Chunks processed | 63,871,816 | 62,868,607 | -1.6% |
+| Characters processed | 3.082B | 3.033B | -1.6% |
+| Throughput | 212,897 chunks/s | 209,553 chunks/s | -1.6% |
+| Character throughput | 10.27M chars/s | 10.11M chars/s | -1.6% |
+| Append latency p50 / p95 / p99 | 0.13 / 0.25 / 0.29 μs | 0.13 / 0.25 / 0.29 μs | unchanged |
+| Peak heap | 82.79 MiB | 82.87 MiB | +0.08 MiB |
+| Source-preservation failures | 0 | 0 | pass |
+| Parser exceptions | 0 | 0 | pass |
+| Completed-node identity reuses | 3.786B | 3.726B | expected from fewer streams |
 
-`npm publish` runs `prepack`, which rebuilds the package and removes source maps from the public tarball. It does not publish this repository's ignored planning files.
+**Verdict:** no correctness, memory, or percentile-latency regression. The 1.6% throughput variation is normal for two long sequential runs on a shared desktop host; percentile latency was identical.
+
+| AI entry | 0.1.3 | 0.2.0 candidate | Change |
+| --- | ---: | ---: | ---: |
+| ESM entry | 23.9 kB | 29.5 kB | +5.6 kB |
+| CJS entry | 136.3 kB | 142.3 kB | +6.0 kB |
+| Browser AI import graph | 91.8 kB / 20.9 kB gzip | 97.4 kB / 22.1 kB gzip | +5.6 kB / +1.2 kB gzip |
+
+The added package cost is the development-only inspector and its types. Current size budgets pass.
+
+Read the [security and production checklist](./docs/LLM_INTEGRATION.md#security-and-production-checklist) before shipping an AI-facing surface.
+
+## Release notes
+
+See [CHANGELOG.md](./CHANGELOG.md) for 0.2.0 changes, migration notes, and the release verification checklist.
 
 ## License
 
-MIT © 2026 Hrisheesh Kumar. See [LICENSE](LICENSE).
+MIT © 2026 Hrisheesh Kumar. See [LICENSE](./LICENSE).

@@ -5,6 +5,14 @@ export type MarkdownFlowStreamStatus = "streaming" | "complete" | "error" | "can
 
 export type MarkdownFlowStreamSegment = MarkdownFlowNode;
 
+/** Development-only stream metadata. It contains counts, never provider payloads. */
+export interface MarkdownFlowStreamDiagnostics {
+  chunkCount: number;
+  characterCount: number;
+  startedAt: number;
+  updatedAt: number;
+}
+
 export interface MarkdownFlowStreamSnapshot {
   content: string;
   segments: readonly MarkdownFlowStreamSegment[];
@@ -12,6 +20,8 @@ export interface MarkdownFlowStreamSnapshot {
   error?: string;
   citations: readonly MarkdownFlowCitation[];
   datasets: readonly MarkdownFlowDataset[];
+  /** Optional local diagnostics for the development inspector. */
+  diagnostics?: MarkdownFlowStreamDiagnostics;
 }
 
 /** @deprecated Use MarkdownFlowNodeParser when only the normalized model is needed. */

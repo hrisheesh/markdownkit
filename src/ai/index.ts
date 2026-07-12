@@ -5,7 +5,9 @@ export type { AIResponseComponent, AIResponseComponents, AIResponseProps, UseAIR
 export { AI_RESPONSE_PRESET_POLICIES, AI_RESPONSE_PRESETS, getAIResponsePresetPolicy } from "./presets";
 export type { AIResponsePreset } from "./presets";
 export { applyMarkdownFlowResponse, applyMarkdownFlowStreamEvent, createMarkdownFlowStream, MarkdownFlowStreamParser } from "./stream";
-export type { MarkdownFlowStreamSegment, MarkdownFlowStreamSnapshot, MarkdownFlowStreamStatus } from "./stream";
+export type { MarkdownFlowStreamDiagnostics, MarkdownFlowStreamSegment, MarkdownFlowStreamSnapshot, MarkdownFlowStreamStatus } from "./stream";
+export { AIResponseInspector } from "./AIResponseInspector";
+export type { AIResponseInspectorProps } from "./AIResponseInspector";
 export { MarkdownFlowNodeParser, isMarkdownFlowStructuredLanguage, joinMarkdownFlowNodes, normalizeMarkdownFlowContent } from "./model";
 export type { MarkdownFlowBlockError, MarkdownFlowBlockErrorCode, MarkdownFlowBlockLifecycle, MarkdownFlowNode, MarkdownFlowStructuredLanguage } from "./model";
 export { extractMarkdownFlowCitationIds, tokenizeMarkdownFlowCitations, MARKDOWN_FLOW_CITATION_TOKEN } from "./citations";

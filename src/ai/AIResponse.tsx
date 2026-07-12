@@ -67,6 +67,8 @@ export interface AIResponseProps extends Omit<StreamingRichMarkdownProps, "citat
   artifactRegistry?: MarkdownFlowArtifactRegistry;
   /** Standard Markdown element overrides, kept separate from trusted AI components. */
   markdownComponents?: Components;
+  /** Shows the local development inspector. It never renders in production. */
+  debug?: boolean;
 }
 
 const objectInputSchema: MarkdownFlowArtifactSchema<Record<string, unknown>> = {
