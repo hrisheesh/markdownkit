@@ -4,6 +4,214 @@ import React, { useState } from "react";
 import { Check, Copy, Eye, FileText, Trash2 } from "lucide-react";
 import RichMarkdown from "@/components/markdown/RichMarkdown";
 
+function createStressAppendix() {
+  const accounts = ["Aster Health", "Northstar Bank", "Cedar Retail", "Morrow Energy", "Helio Labs", "Juniper Legal", "Atlas Freight", "Lumen Schools", "Rook Security", "Orchid Hotels", "Kite Media", "Harbor Works", "Pine Finance", "Vela Bio", "Sable Commerce"];
+  const segments = ["Enterprise", "Mid-market", "Strategic", "Public sector", "Startup"];
+  const regions = ["US-East", "US-West", "EU", "APAC", "LATAM"];
+  const owners = ["Avery Chen", "Sam Rivera", "Jordan Lee", "Riley Patel", "Mina Okafor"];
+  const sheetRows = accounts.map((account, index) => `| **${account}** | ${segments[index % segments.length]} | ${regions[index % regions.length]} | $${(1.2 + index * 0.37).toFixed(2)}m | ${68 + ((index * 7) % 29)}% | ${index % 4 === 0 ? "**At risk**" : index % 3 === 0 ? "Review" : "On track"} | ${owners[index % owners.length]} | ${index % 3 === 0 ? "Hybrid · rerank" : "Vector · 8 passages"} | [${3 + (index % 6)} sources](https://example.com/evidence/${index + 1}) | ${index % 4 === 0 ? "Stale policy *may change answer*" : "`R-${101 + index}` monitored"} | ${index % 2 ? "Expand to **two teams** after eval" : "Human review before Friday"} | ${index % 3 === 0 ? "Long note: regional terminology and a very verbose source title test wrapping inside this narrow cell." : "✓ owner confirmed"} |`).join("\n");
+  const evidenceRows = Array.from({ length: 14 }, (_, index) => `| E-${String(index + 1).padStart(3, "0")} | ${["Policy PDF", "Support ticket", "SQL report", "Call transcript"][index % 4]} | [${["Security retention standard", "Q2 escalation summary", "Usage export and cohort analysis", "Customer interview transcript"][index % 4]}](https://example.com/source/${index + 1}) | ${new Date(2026, 6, 1 + index).toISOString().slice(0, 10)} | ${74 + (index * 3) % 24}% | ${index % 3 === 0 ? "`tenant:eu`" : "`workspace:all`"} | ${index % 4 === 0 ? "Contradicted by older source" : "Directly supports claim"} | ${index % 5 === 0 ? "Needs legal review" : "Verified"} | ${2 + (index % 7)} | ${index % 2 ? "Answer: **yes, with guardrails**" : "Long extracted passage with dates, exceptions, and names to pressure-test table wrapping."} |`).join("\n");
+
+  return `# Render stress lab: realistic, varied LLM output
+
+This appendix is intentionally a **mixed-document torture test**, not a repeated template. It combines dense sheets, long cells, interactive blocks, many chart types, diagrams, code, and intentionally bad model output. On narrow screens, the wide tables should scroll horizontally rather than crush the text.
+
+## 1. Dense executive account sheet — 15 rows × 12 columns
+
+| Account | Segment | Region | ARR | Confidence | SLA | Owner | Retrieval | Citations | Risk | Next action | Reader notes |
+| :--- | :--- | :--- | ---: | ---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+${sheetRows}
+
+## 2. RAG evidence matrix — 14 rows × 10 columns
+
+| ID | Type | Source | Retrieved | Match | Scope | Relation | Review | Citations | Extract / answer context |
+| :--- | :--- | :--- | :--- | ---: | :--- | :--- | :--- | ---: | :--- |
+${evidenceRows}
+
+\`\`\`metrics
+{
+  "title": "Stress document telemetry",
+  "metrics": [
+    { "label": "Rendered blocks", "value": "46", "change": "+31", "detail": "mixed formats" },
+    { "label": "Largest table", "value": "15 × 12", "change": "+140 cells", "detail": "long-cell wrapping" },
+    { "label": "Malformed blocks", "value": "3", "change": "expected", "detail": "graceful fallback" }
+  ]
+}
+\`\`\`
+
+## 3. Different visual data shapes
+
+\`\`\`chart
+{ "type": "line", "title": "Grounded answer rate by release", "data": [{"name":"R1","grounded":71,"target":80},{"name":"R2","grounded":76,"target":80},{"name":"R3","grounded":82,"target":82},{"name":"R4","grounded":88,"target":84},{"name":"R5","grounded":91,"target":86},{"name":"R6","grounded":89,"target":88}], "keys": ["grounded", "target"], "colors": ["#007aff", "#ff9f0a"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "area", "title": "Streaming load across a long answer", "data": [{"name":"00s","tokens":14},{"name":"05s","tokens":83},{"name":"10s","tokens":167},{"name":"15s","tokens":244},{"name":"20s","tokens":301},{"name":"25s","tokens":335},{"name":"30s","tokens":348}], "keys": ["tokens"], "colors": ["#af52de"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "radar", "title": "Model-output quality profile", "data": [{"name":"Grounding","score":91},{"name":"Structure","score":86},{"name":"Clarity","score":88},{"name":"Freshness","score":74},{"name":"Safety","score":97},{"name":"Actionability","score":82}], "keys": ["score"], "colors": ["#34c759"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "composed", "title": "Cost and quality trade-off", "data": [{"name":"Small","requests":880,"quality":74},{"name":"Medium","requests":620,"quality":84},{"name":"Large","requests":310,"quality":91},{"name":"Expert","requests":96,"quality":95}], "bars": ["requests"], "lines": ["quality"], "colors": ["#007aff", "#ff375f"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "scatter", "title": "Latency versus answer quality", "data": [{"x":110,"y":72},{"x":155,"y":79},{"x":190,"y":83},{"x":240,"y":88},{"x":310,"y":92},{"x":440,"y":94},{"x":520,"y":95}], "keys": ["x", "y"], "colors": ["#5e5ce6"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "heatmap", "title": "Citation coverage by query family", "data": [{"name":"Policy","W1":88,"W2":91,"W3":93,"W4":90},{"name":"Support","W1":64,"W2":72,"W3":81,"W4":85},{"name":"Finance","W1":92,"W2":89,"W3":94,"W4":96},{"name":"Research","W1":71,"W2":76,"W3":83,"W4":87},{"name":"Legal","W1":58,"W2":64,"W3":70,"W4":78}], "keys": ["W1", "W2", "W3", "W4"], "max": 100, "colors": ["#007aff"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "funnel", "title": "Reader journey", "data": [{"name":"Opened","value":12000},{"name":"Read past intro","value":8750},{"name":"Opened evidence","value":4220},{"name":"Took action","value":1680}], "keys": ["value"], "colors": ["#007aff", "#5e5ce6", "#af52de", "#34c759"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "gauge", "title": "Release confidence", "data": [{"name":"confidence","value":87}], "keys": ["value"], "max": 100, "colors": ["#34c759"] }
+\`\`\`
+
+\`\`\`chart
+{ "type": "waterfall", "title": "Weekly relevance movement", "data": [{"name":"Baseline","value":62},{"name":"Reranker","value":14},{"name":"Freshness","value":8},{"name":"Prompt drift","value":-6},{"name":"Bad sources","value":-4},{"name":"Final","value":0}], "keys": ["value"], "colors": ["#007aff"] }
+\`\`\`
+
+## 4. Long interactive and structured content
+
+\`\`\`comparison
+{
+  "title": "Rendering strategy decision sheet",
+  "columns": ["Plain text", "HTML artifact", "Markdown Flow", "Custom UI", "PDF export"],
+  "rows": [
+    { "label": "Streaming friendly", "values": [true, false, true, true, false] },
+    { "label": "Token overhead", "values": ["Low", "High", "Low", "Medium", "High"] },
+    { "label": "Reliable table fallback", "values": ["Weak", "Variable", "Native", "Custom", "Static"] },
+    { "label": "Interactive charts", "values": [false, true, true, true, false] },
+    { "label": "LLM authoring surface", "values": ["Easy", "Brittle", "Constrained + readable", "Hard", "Hard"] },
+    { "label": "Mobile adaptation", "values": [true, "Depends", true, "Depends", false] },
+    { "label": "Safe malformed output", "values": ["Text only", "May break", "Fallback UI", "Depends", "May fail"] },
+    { "label": "Reader can copy source", "values": [true, false, true, false, true] }
+  ]
+}
+\`\`\`
+
+\`\`\`accordion
+{
+  "title": "Failure-mode walkthrough",
+  "items": [
+    { "title": "A table contains a very long answer", "content": "The table keeps its columns and exposes horizontal scrolling. This is deliberate: shrinking a twelve-column evidence sheet until it is unreadable is worse than allowing a controlled scroll region.", "open": true },
+    { "title": "The model emits a structured fence with broken JSON", "content": "The renderer does not execute it as markup. It replaces that one block with a calm validation message while the rest of the answer continues to render." },
+    { "title": "The chart has no data or type", "content": "The chart component detects that its essential configuration is missing and returns an incomplete-configuration state instead of attempting to render invalid data." },
+    { "title": "The response mixes prose, citations, code, equations, and UI blocks", "content": "Each portion is parsed independently, so a bad specialized block does not corrupt adjacent ordinary Markdown." },
+    { "title": "The reader is on a phone", "content": "Cards collapse, tables retain an internal horizontal scroll, and charts use responsive containers. This section also makes the document intentionally long enough to reveal scroll and memory problems." }
+  ]
+}
+\`\`\`
+
+\`\`\`tabs
+{
+  "title": "Same information, different reader needs",
+  "tabs": [
+    { "label": "Executive", "title": "Decision", "content": "Approve a guarded release: confidence is 87/100, citation coverage is improving, and the EU policy source remains the only material open risk." },
+    { "label": "Operator", "title": "Next actions", "content": "Refresh stale policy documents, retain the retrieval trace for every high-impact answer, and send unresolved legal questions to review with their exact cited passages." },
+    { "label": "Engineer", "title": "Implementation", "content": "Stream plain Markdown immediately. Emit a structured fenced block only when its schema adds reader value. Treat every block as independently fallible." },
+    { "label": "Auditor", "title": "Evidence", "content": "Each answer should retain source identifier, retrieval time, workspace scope, rank, and any contradiction or human-review flag." }
+  ]
+}
+\`\`\`
+
+\`\`\`filetree
+{
+  "title": "A realistic answer bundle",
+  "files": [
+    { "name": "answer-bundle", "type": "folder" },
+    { "name": "response.md", "depth": 1, "detail": "streamed answer" },
+    { "name": "evidence", "type": "folder", "depth": 1 },
+    { "name": "E-001-policy.pdf", "depth": 2, "detail": "primary" },
+    { "name": "E-002-ticket.json", "depth": 2, "detail": "supporting" },
+    { "name": "retrieval-trace.json", "depth": 1, "detail": "auditable" },
+    { "name": "evaluation", "type": "folder", "depth": 1 },
+    { "name": "grounding-report.csv", "depth": 2, "detail": "weekly" },
+    { "name": "render-policy.json", "depth": 2, "detail": "allowlist" },
+    { "name": "review-notes.md", "depth": 1, "detail": "human feedback" }
+  ]
+}
+\`\`\`
+
+\`\`\`progress
+{
+  "title": "Release gate detail",
+  "items": [
+    { "title": "Schema conformance", "value": 94, "description": "Most generated structured blocks validate before they reach the reader." },
+    { "title": "Citation completeness", "value": 87, "description": "Claims with material impact must retain a traceable evidence link." },
+    { "title": "Mobile visual review", "value": 76, "description": "Wide evidence sheets and embedded diagrams are still being tested on smaller viewports." },
+    { "title": "Adversarial output suite", "value": 63, "description": "Malformed fences, unexpected block types, and unsafe links need broader coverage." },
+    { "title": "Reader comprehension", "value": 90, "description": "A clear recommendation should remain visible even inside a very dense result." }
+  ]
+}
+\`\`\`
+
+## 5. A long streaming payload and diagram
+
+\`\`\`json
+{
+  "request_id": "req_stress_01HZZ7", "stream": true, "retrieval": { "query": "Can EU admins export audit history?", "top_k": 8, "filters": { "workspace": "eu-prod", "fresh_after": "2026-01-01" } },
+  "chunks": [
+    { "seq": 1, "kind": "prose", "text": "Yes — with an admin role and a 90-day export window." },
+    { "seq": 2, "kind": "citation", "source": "E-001", "confidence": 0.93 },
+    { "seq": 3, "kind": "structured", "format": "comparison", "validated": true },
+    { "seq": 4, "kind": "warning", "text": "One older policy contradicts the retention period." }
+  ]
+}
+\`\`\`
+
+\`\`\`mermaid
+flowchart LR
+  Q[User question] --> R[Retrieve scoped evidence]
+  R --> V{Fresh and relevant?}
+  V -- yes --> A[Stream Markdown answer]
+  A --> B[Render table, chart, or block]
+  V -- no --> H[Ask for review or qualify answer]
+  B --> C[Reader action]
+\`\`\`
+
+## 6. Intentionally bad model output — expected graceful fallback
+
+The next three fences are *supposed* to fail. The surrounding document should remain intact and each invalid block should show its own fallback state.
+
+\`\`\`callout
+{ "tone": "warning", "title": "Broken JSON", "body": "The model forgot the closing quote }
+\`\`\`
+
+\`\`\`metrics
+{ "title": "Wrong shape", "metrics": [] }
+\`\`\`
+
+\`\`\`chart
+{ "title": "Missing data and type", "keys": ["value"] }
+\`\`\`
+
+\`\`\`callout
+{ "tone": "success", "title": "Recovery", "body": "A valid block immediately after malformed model output still renders normally. One failure should never take down a long answer." }
+\`\`\`
+
+## 7. Dense ordinary Markdown after recovery
+
+1. **Do not make the model produce an entire HTML page** when Markdown plus a compact structured block expresses the same intent.
+2. Keep the raw response inspectable; every table and fence in this lab is editable in the left panel.
+3. Test messy output deliberately:
+   - [x] long source names
+   - [x] wide tables
+   - [x] different chart families
+   - [x] valid and invalid structured blocks
+   - [ ] your production retrieval policy and real customer vocabulary
+
+The weighted confidence score remains $S = 0.45q + 0.35c + 0.20f$, where $q$ is evidence quality, $c$ is citation coverage, and $f$ is source freshness. A high score is useful only when the reader can inspect the evidence that produced it.`;
+}
+
+const STRESS_APPENDIX = createStressAppendix();
+
 export default function MarkdownPlayground() {
   const [markdown, setMarkdown] = useState<string>(`# Markdown Flow playground
 
@@ -468,6 +676,14 @@ Einstein's famous equation $E = mc^2$ shows the equivalence of mass and energy, 
 > — *Joe Sparano*
 
 This demonstrates how the rich text engine handles **bold text**, *italic text*, ~~strikethrough~~, and \`inline code\` blocks wrapped seamlessly around inline citations like this one [1].
+
+---
+
+# High-volume rendering appendix
+
+The following 24 workstreams intentionally flood the document with realistic, mixed-format material. Use it to evaluate parsing, scrolling, responsiveness, copy behavior, and repeated structured blocks under sustained load.
+
+${STRESS_APPENDIX}
 `);
 
   const [activePanel, setActivePanel] = useState<"editor" | "preview">("editor");
