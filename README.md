@@ -1,538 +1,253 @@
 # Markdown Flow
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/hrisheesh/markdown-flow/main/.github/assets/markdown-flow-hero.svg" alt="Markdown Flow preview showing rich document blocks" width="100%" />
-</p>
+**The presentation layer for Markdown and AI answers in React.**
 
-<p align="center">
-  <strong>Beautiful, interactive Markdown for React.</strong><br />
-  A production-ready document toolkit that turns familiar Markdown into calm, expressive interfaces—with charts, structured blocks, diagrams, math, code, and media, without inventing a new authoring format.
-</p>
+Markdown Flow turns ordinary Markdown into a finished product surface: readable prose, tables, mathematics, code, diagrams, charts, citations, and trusted application artifacts. It is built for React and Next.js teams that need a dependable renderer today—and a controlled, real-time answer UI when they add AI.
 
-<p align="center">
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#what-it-renders">Formats</a> ·
-  <a href="#whats-new-in-012">What’s new</a> ·
-  <a href="#api">API</a> ·
-  <a href="#safety-and-content-model">Safety</a> ·
-  <a href="#quality-and-compatibility">Quality</a> ·
-  <a href="#playground-and-examples">Playground</a>
-</p>
+> The model produces compact semantic Markdown. Your product keeps control of data, permissions, components, and actions.
 
 <p align="center">
   <a href="https://www.npmjs.com/package/markdown-flow"><img src="https://img.shields.io/npm/v/markdown-flow?color=4c5be8&label=npm" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/markdown-flow"><img src="https://img.shields.io/npm/dm/markdown-flow?color=171717" alt="npm downloads" /></a>
-  <a href="https://github.com/hrisheesh/markdown-flow/actions/workflows/package-quality.yml"><img src="https://github.com/hrisheesh/markdown-flow/actions/workflows/package-quality.yml/badge.svg" alt="package quality checks" /></a>
   <a href="https://github.com/hrisheesh/markdown-flow"><img src="https://img.shields.io/badge/React-18%2B-149eca?logo=react" alt="React 18 or later" /></a>
   <a href="https://github.com/hrisheesh/markdown-flow"><img src="https://img.shields.io/badge/TypeScript-ready-3178c6?logo=typescript" alt="TypeScript ready" /></a>
 </p>
 
-## Why Markdown Flow?
+## Why it exists
 
-Markdown is a great writing interface. Markdown Flow keeps it that way, then adds a small vocabulary of rich fenced blocks for the moments a paragraph is not enough.
+Markdown is an excellent authoring format, but generic renderers stop at rendering text. AI products introduce a harder problem: an answer needs to stream smoothly, cite evidence, visualize approved data, and occasionally show product-specific UI—without asking the model to generate a webpage or run application code.
 
-- **Drop-in React component** — render a string with one component and one stylesheet.
-- **A polished reading experience** — premium typography, responsive layout, restrained motion, accessible controls, and reduced-motion support are included.
-- **Rich without a new DSL** — write JSON5 in standard fenced Markdown blocks; easy for people, LLMs, and version control.
-- **Safer by default** — rendered HTML is sanitized and external resources are represented as safe previews instead of executable embeds.
-- **Framework-friendly** — works in React, Vite, and Next.js client components. No Next.js runtime dependency.
+Generating HTML, JSX, spreadsheets, or mini-apps from a model is an expensive and fragile interface. It wastes output tokens on presentation details, breaks easily during streaming, and gives untrusted text too much control over the product surface.
 
-## Built for real applications
+Markdown Flow was created to make that boundary explicit:
 
-| Use it with | What you get |
+```text
+Your retrieval and application data
+        ↓
+LLM emits Markdown + approved JSON blocks
+        ↓
+Markdown Flow validates and streams stable UI
+        ↓
+Trusted React components, citations, charts, and artifacts
+```
+
+The model describes intent in compact Markdown and approved JSON blocks. Markdown Flow validates that intent and renders it with trusted React code. Your application remains the authority for every piece of data, every permission, and every action.
+
+## What makes it different
+
+| Instead of | Markdown Flow does |
 | --- | --- |
-| **React 18+** | A typed `RichMarkdown` component with ESM, CommonJS, and declaration exports. |
-| **Next.js** | Client-component friendly rendering; import the stylesheet once in your root layout. |
-| **Any CSS setup** | A precompiled stylesheet with renderer rules scoped under `.markdown-render`; no Tailwind setup is required. |
-| **User-authored or generated content** | Sanitized Markdown, defensive rich-block parsing, and non-executable link previews. |
+| A basic Markdown renderer that only turns text into HTML | Delivers a complete React reading surface with rich blocks, charts, diagrams, math, citations, and safe fallbacks. |
+| Asking an LLM to generate HTML, JSX, or a spreadsheet | Uses compact Markdown plus an intentionally small, versioned response contract. |
+| Re-rendering the entire answer for every streamed token | Keeps completed sections mounted and holds incomplete rich fences in an accessible pending state. |
+| Putting private analytics rows or source text into every prompt | Lets models reference host-authorized citations and datasets by ID; the app resolves them securely. |
+| Letting a model choose arbitrary components or execute generated code | Uses a host-registered, schema-validated, versioned artifact registry. |
 
-## Installation
+This is the difference between rendering model output and operating a reliable AI answer surface.
+
+## Built for real product work
+
+- **Knowledge and support assistants** — stream grounded answers with source citations and readable technical content.
+- **RAG applications** — keep retrieval and source permissions in your application while presenting cited results clearly.
+- **Analytics copilots** — let a model select an approved chart or metric view without exposing entire datasets in prompt context.
+- **Internal business tools** — render account health, incident, order, or workflow artifacts using trusted host components.
+- **Documentation and content products** — render polished Markdown, diagrams, code, math, and media in React or Next.js.
+
+## Install
 
 ```bash
 npm install markdown-flow
 ```
 
-## What’s new in 0.1.3
-
-`0.1.3` makes Markdown Flow ready for AI applications: provider-neutral response contracts, safe incremental streaming, strict block validation, trusted datasets and artifacts, citations, and privacy-safe telemetry. The package keeps completed sections stable while model output arrives and renders rich blocks only after their fence and configuration are complete.
-
-Source maps are generated for local development but are intentionally excluded from the published npm package to keep installs smaller. This does not change runtime behavior; consumers who need package-level source-map debugging can build from source.
-
-### 0.1.2 highlights
-
-`0.1.2` launches Markdown Flow as a clean, unscoped package name and makes the renderer more adaptable and dependable. The complete experience stays at the package root:
+Markdown Flow supports React 18 and React 19. Import the stylesheet once in the client application shell:
 
 ```tsx
-import { RichMarkdown } from "markdown-flow";
+import "markdown-flow/styles.css";
 ```
 
-- **Controlled extension points** — add per-render fenced-block renderers with `blockRenderers`, or override standard Markdown elements through `components`.
-- **More resilient framework paths** — use the optional `markdown-flow/core` entry for Markdown-only experiences, or `markdown-flow/server` for static server rendering. These are additive choices; the root renderer remains the complete experience.
-- **Better interactive semantics** — citations, accordions, tabs, progress indicators, and charts now expose clearer accessible labels, state, and relationships.
-- **Release-grade safeguards** — render contracts, React 18/19 packed-package compatibility tests, size budgets, and CI protect the published surface.
-
-
-### Migrating from the scoped package
-
-The earlier `@hrisheesh/markdown-render@0.1.1` release remains available, but all new installs should use `markdown-flow`. Update the package name in imports and stylesheet paths; component APIs and Markdown content remain the same.
-
 ## Quick start
-
-Import the stylesheet once at your application entry point, then pass Markdown to `RichMarkdown`.
 
 ```tsx
 import { RichMarkdown } from "markdown-flow";
 import "markdown-flow/styles.css";
 
-const content = `
-# Your document
-
-Markdown Flow turns **Markdown** into a finished reading experience.
-
-> Use ordinary Markdown wherever it is the clearest tool.
-`;
-
-export function DocumentPreview() {
+export function Article({ content }: { content: string }) {
   return <RichMarkdown content={content} />;
 }
 ```
 
-### Stream an AI response
+`RichMarkdown` supports GitHub-flavored Markdown, tables, syntax-highlighted code, KaTeX math, Mermaid, charts, media, structured blocks, and citations.
 
-Use the client-only AI entry point to keep completed Markdown sections stable while text is arriving. Fenced rich blocks remain pending until their closing fence is received, so incomplete JSON never reaches an interactive renderer.
+For a compact, server-safe Markdown-only renderer:
 
 ```tsx
-import { StreamingRichMarkdown, useMarkdownFlowStream } from "markdown-flow/ai";
-import "markdown-flow/styles.css";
+import { StaticMarkdown } from "markdown-flow/server";
+import "markdown-flow/core.css";
 
-function AssistantAnswer() {
-  const stream = useMarkdownFlowStream();
-
-  // In an SSE or provider callback:
-  // stream.append(delta);
-  // stream.complete();
-
-  return <StreamingRichMarkdown stream={stream} renderPolicy={{ allowedBlocks: ["callout", "chart"] }} />;
+export function Document({ content }: { content: string }) {
+  return <StaticMarkdown content={content} />;
 }
 ```
 
-`useMarkdownFlowStream()` also accepts provider-neutral text, citation, dataset, error, and complete events through `stream.apply(event)`. For a completed structured response, use `stream.applyResponse(response)`. It exposes `append`, `replace`, `complete`, `fail`, `cancel`, and `retry` controls. Use the hook for incremental streaming; for a simple accumulated string, pass `content` directly to `StreamingRichMarkdown`.
+## AI quick start
 
-### Connect an LLM
+Use the AI entry point for real-time answers. It accepts a simple accumulated string or a controller that receives provider-neutral events.
 
-The `markdown-flow/ai` entry point is provider-neutral. On the server, add the generated contract to the model request and keep retrieval, permissions, citation metadata, and dataset resolution in your own application.
+```tsx
+"use client";
+
+import { StreamingRichMarkdown, useMarkdownFlowStream } from "markdown-flow/ai";
+import "markdown-flow/styles.css";
+
+export function Assistant() {
+  const stream = useMarkdownFlowStream();
+
+  // Pass text deltas from your LLM client to stream.append(delta).
+  // Call stream.complete() when the provider finishes.
+  return (
+    <StreamingRichMarkdown
+      stream={stream}
+      renderPolicy={{ allowedBlocks: ["callout", "metrics", "chart"] }}
+      scrollBehavior="if-at-bottom"
+    />
+  );
+}
+```
+
+The model should receive Markdown Flow's contract. Do not ask it to emit HTML, JSX, or arbitrary component names.
 
 ```ts
 import { createMarkdownFlowInstructions } from "markdown-flow/ai";
 
 const instructions = createMarkdownFlowInstructions({
   allowedBlocks: ["callout", "metrics", "chart"],
-  availableDatasets: [{ id: "revenue-by-month", description: "Authorized monthly revenue data" }],
-  citations: [{ id: "1", filename: "Q2-report.pdf" }],
+  availableDatasets: [{ id: "revenue-by-month", description: "Authorized monthly revenue" }],
+  citations: sources.map(({ id, filename }) => ({ id, filename })),
 });
 
-// Pass `instructions` to your provider's system/developer instruction field.
-// Stream the provider response through your existing SSE endpoint.
+// Add `instructions` to your provider's system/developer instructions.
 ```
 
-For providers with structured output or tool calling, adapt `markdownFlowResponseSchema` or `markdownFlowResponseTool` to that provider's SDK. Its `content` field contains Markdown Flow Markdown; citations and datasets must still be sent as trusted application metadata, never accepted from the model.
+Full request-to-response, SSE, RAG, dataset, artifact, security, and operations guidance is in the [documentation](https://github.com/hrisheesh/markdown-flow/tree/main/docs).
 
-For a generic fetch/SSE endpoint, the client can consume plain text chunks, normalized Markdown Flow events, or common provider chunk shapes without adding a provider SDK:
+## What a rich response looks like
 
-```tsx
-import { StreamingRichMarkdown, readMarkdownFlowSSE, useMarkdownFlowStream } from "markdown-flow/ai";
+Normal Markdown remains the default. A model uses a fenced block only when it communicates better than prose.
 
-export function AssistantAnswer() {
-  const stream = useMarkdownFlowStream();
+````md
+Revenue increased 18% quarter over quarter [revenue-q2].
 
-  async function ask(question: string) {
-    const response = await fetch("/api/assistant", {
-      method: "POST",
-      body: JSON.stringify({ question }),
-      headers: { "content-type": "application/json" },
-    });
-
-    for await (const event of readMarkdownFlowSSE(response)) stream.apply(event);
-  }
-
-  return <StreamingRichMarkdown stream={stream} renderPolicy={{ allowedBlocks: ["callout", "metrics", "chart"] }} />;
-}
-```
-
-Use the prompt path when the provider only returns text. Prefer the structured-output/tool path when it is available: it constrains the response envelope, while Markdown Flow still validates every fenced block before rendering.
-
-### Render trusted RAG sources and analytics data
-
-Models select a dataset ID and approved visual fields; they never supply the data rows. Your application resolves each requested dataset after applying its own tenant, user, and authorization checks. This keeps large analytics payloads out of the model context and lets data refresh independently of the generated narrative.
-
-~~~~md
 ```chart
 {
-  "dataset": "revenue-by-month",
-  "type": "line",
-  "x": "month",
-  "y": "revenue",
-  "title": "Monthly revenue"
-}
-```
-~~~~
-
-```tsx
-import {
-  StreamingRichMarkdown,
-  type MarkdownFlowDatasetResolver,
-} from "markdown-flow/ai";
-
-const datasetResolver: MarkdownFlowDatasetResolver = {
-  async resolve({ id, fields }) {
-    const result = await api.getAuthorizedDataset(id, fields);
-    if (!result) return { status: "unavailable" };
-    if (!result.allowed) return { status: "denied" };
-
-    return {
-      status: "ready",
-      value: {
-        id,
-        schema: { fields: ["month", "revenue"] },
-        data: result.rows,
-      },
-    };
-  },
-};
-
-<StreamingRichMarkdown
-  stream={stream}
-  datasetResolver={datasetResolver}
-  renderPolicy={{
-    allowedBlocks: ["chart"],
-    allowedDatasetIds: ["revenue-by-month"],
-    allowedDatasetFields: { "revenue-by-month": ["month", "revenue"] },
-  }}
-/>;
-```
-
-Dataset charts show loading, unavailable, denied, and error states. `useMarkdownFlowDataset(request, datasetResolver)` returns a `refresh()` function when you need to reload data without regenerating the narrative. Likewise, `citationResolver` on `RichMarkdown` or `StreamingRichMarkdown` resolves only source IDs present in the rendered response.
-
-### Lean Markdown-only entry
-
-When an experience only needs responsive, sanitized GitHub-flavored Markdown, use the dedicated core entry. It excludes rich blocks, charts, Mermaid, KaTeX, and syntax highlighting from the imported runtime while leaving the default package behavior unchanged.
-
-```tsx
-import { RichMarkdownCore } from "markdown-flow/core";
-import "markdown-flow/core.css";
-
-export function Article({ content }: { content: string }) {
-  return <RichMarkdownCore content={content} />;
-}
-```
-
-### Next.js (App Router)
-
-Import the stylesheet in your root layout and render the interactive component from a Client Component.
-
-```tsx
-// app/layout.tsx
-import "markdown-flow/styles.css";
-```
-
-```tsx
-// components/document-preview.tsx
-"use client";
-
-import { RichMarkdown } from "markdown-flow";
-
-export function DocumentPreview({ content }: { content: string }) {
-  return <RichMarkdown content={content} />;
-}
-```
-
-### Server Components and SSR
-
-For non-interactive documents, use the static entry directly in a React Server Component or any server-rendered React application. It supports sanitized GitHub-flavored Markdown and element overrides, but intentionally does not load interactive rich blocks, Mermaid, math, or syntax highlighting.
-
-```tsx
-// app/article/page.tsx — no "use client" needed
-import { StaticMarkdown } from "markdown-flow/server";
-import "markdown-flow/core.css";
-
-export default async function ArticlePage() {
-  const content = "# Server-rendered Markdown";
-  return <StaticMarkdown content={content} />;
-}
-```
-
-## What it renders
-
-| Native Markdown | Rich document blocks | Data and technical content |
-| --- | --- | --- |
-| Headings, lists, links, images, tables, task lists, blockquotes, code | Callouts, metrics, timelines, steps, comparisons, cards, tabs, accordions, quotes, status, progress, checklists, file trees | Charts, Mermaid diagrams, KaTeX math, syntax-highlighted code, safe embeds, image galleries, before/after layouts, map summaries |
-
-Rich blocks use a fenced code block with a JSON5 configuration. Your source stays readable and portable.
-
-### Callouts
-
-````md
-```callout
-{
-  tone: "insight",
-  title: "Start with the reader",
-  body: "Use a richer block only when it makes an idea quicker to understand."
-}
-```
-````
-
-### Metrics
-
-````md
-```metrics
-{
-  title: "This week",
-  metrics: [
-    { label: "Active users", value: "24.8K", change: "+12.4%", detail: "vs last week" },
-    { label: "Conversion", value: "6.2%", change: "+0.8%", detail: "vs last week" }
-  ]
-}
-```
-````
-
-### Charts
-
-````md
-```chart
-{
-  type: "area",
-  title: "Weekly momentum",
-  data: [
-    { name: "Mon", value: 18 },
-    { name: "Tue", value: 24 },
-    { name: "Wed", value: 21 },
-    { name: "Thu", value: 38 },
-    { name: "Fri", value: 46 }
+  "type": "bar",
+  "title": "Quarterly revenue",
+  "data": [
+    { "quarter": "Q1", "revenue": 120 },
+    { "quarter": "Q2", "revenue": 142 }
   ],
-  keys: ["value"]
+  "x": "quarter",
+  "y": "revenue"
 }
 ```
 ````
 
-Supported chart types: `bar`, `line`, `area`, `pie`, `radar`, `composed`, `sparkline`, `scatter`, `funnel`, `gauge`, `heatmap`, `cohort`, and `waterfall`.
+For large or sensitive data, the model references a host-owned dataset instead of serializing rows into its answer. The application validates the ID and fields, performs authorization, and resolves the data.
 
-### Diagrams and math
+## 0.1.3 release: AI-ready without a renderer regression
 
-Mermaid and KaTeX work alongside your rich blocks.
+`0.1.3` introduces the `markdown-flow/ai` integration surface:
 
-````md
-```mermaid
-flowchart LR
-  Draft --> Review --> Publish
-```
+- versioned `markdown-flow/v1` response and stream contracts;
+- concise provider-neutral instructions and a structured-output tool/schema;
+- strict built-in block validation and render policies;
+- incremental streaming parser, pending states, cancellation, retry, and scroll anchoring;
+- citation and dataset resolver interfaces for RAG;
+- host-owned custom artifact registry with schema, authorization, resolver, fallback, and version controls;
+- privacy-safe telemetry hooks;
+- source maps excluded from the public npm tarball while retained for ordinary local builds.
 
-The familiar equation $E = mc^2$ works inline, too.
-````
+### Controlled stress test: 0.1.2 → 0.1.3
 
-## API
+The comparison used the published `0.1.2` package and the packed `0.1.3` candidate in the same React 19.2.4 server-rendering environment. Package order alternated across rounds to reduce warm-up bias. These numbers are directional measurements, not a guarantee for every product.
 
-```ts
-import type {
-  Citation,
-  RichBlockRenderers,
-  RichMarkdownProps,
-} from "markdown-flow";
-```
+| Workload | 0.1.3 change | Assessment |
+| --- | ---: | --- |
+| Short Markdown | +2.1% render time | Benchmark noise / effectively neutral |
+| Long document | -0.6% render time | Slightly faster |
+| Tables | -0.4% render time | Slightly faster |
+| Rich blocks | +2.6% render time | Benchmark noise / effectively neutral |
+| Charts | +3.6% render time | Benchmark noise / effectively neutral |
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `content` | `string` | Markdown source, including optional rich fenced blocks. |
-| `citations` | `Citation[]` | Optional source references displayed as interactive inline citation badges. |
-| `blockRenderers` | `RichBlockRenderers` | Explicit renderers for named fenced block languages. |
-| `components` | `Components` | Overrides for standard Markdown HTML elements. |
+AI-specific checks for `0.1.3`:
 
-```tsx
-<RichMarkdown
-  content="Research supports this conclusion [1]."
-  citations={[
-    {
-      id: "[1]",
-      chunk_id: "chunk-001",
-      document_id: "research-2026",
-      filename: "research-summary.pdf",
-      text_preview: "The supporting source excerpt appears here.",
-    },
-  ]}
-/>
-```
+| Check | Result |
+| --- | ---: |
+| Fence parser, 13.7 kB delivered one character at a time | ~0.207 ms median |
+| Strict block validation | ~485,000 validations/sec |
+| React compatibility | React 18.3.1 and React 19.2.4 passed |
+| npm package size | 913.9 kB → 907.8 kB compressed (-0.67%) |
+| Public source maps | Present in 0.1.2 → none in 0.1.3 |
 
-### Controlled extension points
+The release also passed linting, package build, render verification, size budgets, compatibility testing, and package-content verification.
 
-Register custom fenced blocks per render. There is no global registry, so configurations stay isolated between requests and documents. A renderer receives text-only fenced content after Markdown sanitization; return ordinary React elements and avoid `dangerouslySetInnerHTML` for untrusted content.
+## Package entry points
 
-```tsx
-import { RichMarkdown, type RichBlockRenderers } from "markdown-flow";
+| Import | Use it for |
+| --- | --- |
+| `markdown-flow` | Full rich Markdown rendering and strict policies |
+| `markdown-flow/core` | Lightweight sanitized GFM rendering |
+| `markdown-flow/server` | Server-safe static Markdown rendering |
+| `markdown-flow/ai` | Streaming, LLM contract, RAG, resolvers, artifacts, and telemetry |
+| `markdown-flow/styles.css` | Full renderer styles |
+| `markdown-flow/core.css` | Core renderer styles |
 
-const blockRenderers: RichBlockRenderers = {
-  alert: ({ code }) => <aside role="note">{code}</aside>,
-};
+## Security model
 
-export function ReleaseNotes({ content }: { content: string }) {
-  return (
-    <RichMarkdown
-      content={content} // ```alert\nScheduled maintenance tonight.\n```
-      blockRenderers={blockRenderers}
-      components={{ h2: ({ children }) => <h2 className="section-title">{children}</h2> }}
-    />
-  );
-}
-```
+Markdown Flow is a presentation layer, not an authorization system. Treat model output as untrusted.
 
-`components` is also available on `RichMarkdownCore` and `StaticMarkdown`. Overrides are applied after the package defaults, while Markdown source is still sanitized before any override receives it.
+- Keep provider keys, retrieval, tenant checks, and dataset access on your server.
+- Use `renderPolicy` to allow only the blocks, data IDs, fields, URLs, and limits appropriate to each surface.
+- Supply citations and datasets as trusted metadata; never let the model invent authority.
+- Register custom artifacts explicitly. They validate input and are host-rendered; model output never executes code.
+- Monitor invalid blocks, fallbacks, errors, and resolver outcomes through optional privacy-safe telemetry.
 
-### Safe custom AI artifacts
+See the [security and production checklist](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#security-and-production-checklist) before shipping an AI-facing experience.
 
-For model-generated business UI, use the versioned artifact registry from `markdown-flow/ai` rather than `blockRenderers`. The model emits one strict JSON envelope in an `artifact` fence; it can select only a name and version that the application has registered and explicitly permitted. It never selects an arbitrary React component or executes generated code.
+## Documentation
 
-```tsx
-import {
-  createMarkdownFlowArtifactRegistry,
-  MarkdownFlowArtifactState,
-  type MarkdownFlowArtifactDefinition,
-} from "markdown-flow/ai";
+- [Documentation overview](https://github.com/hrisheesh/markdown-flow/tree/main/docs)
+- [React Markdown renderer](https://github.com/hrisheesh/markdown-flow/blob/main/docs/REACT_MARKDOWN_RENDERER.md)
+- [Next.js AI streaming](https://github.com/hrisheesh/markdown-flow/blob/main/docs/NEXTJS_AI_STREAMING.md)
+- [RAG citations and trusted artifacts](https://github.com/hrisheesh/markdown-flow/blob/main/docs/RAG_CITATIONS_AND_ARTIFACTS.md)
+- [Complete integration guide](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md)
+- [Streaming and SSE](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#streaming-an-sse-response)
+- [RAG, citations, and datasets](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#rag-citations-and-trusted-datasets)
+- [Custom business artifacts](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#custom-business-artifacts)
+- [API reference](https://github.com/hrisheesh/markdown-flow/blob/main/docs/LLM_INTEGRATION.md#api-reference)
 
-const customerHealth: MarkdownFlowArtifactDefinition<{ accountId: string }, CustomerHealth> = {
-  name: "customer-health",
-  version: "1",
-  schema: {
-    parse(input) {
-      if (!input || typeof input !== "object" || typeof (input as { accountId?: unknown }).accountId !== "string") {
-        return { valid: false, reason: "accountId is required." };
-      }
-      return { valid: true, value: { accountId: (input as { accountId: string }).accountId } };
-    },
-  },
-  // Keep tenant and user authorization in this host-owned resolver.
-  resolver: async ({ accountId }) => api.getAuthorizedCustomerHealth(accountId),
-  render: ({ value }) => <CustomerHealthCard account={value} />,
-  fallback: ({ state, reason, retry }) => <MarkdownFlowArtifactState state={state} message={reason} onRetry={retry} />,
-};
+## Release commands
 
-const artifacts = createMarkdownFlowArtifactRegistry([customerHealth]);
-
-<RichMarkdown
-  content={content}
-  artifactRegistry={artifacts}
-  renderPolicy={{
-    allowedArtifacts: ["customer-health"],
-    allowedArtifactVersions: { "customer-health": ["1"] },
-  }}
-/>;
-```
-
-The corresponding model output is compact, strict JSON:
-
-````md
-```artifact
-{"name":"customer-health","version":"1","input":{"accountId":"acme"}}
-```
-````
-
-Every registered artifact requires a schema, renderer, and fallback; its resolver is optional. The registry rejects duplicate `name@version` pairs. A render policy is required for model artifacts, and both artifact names and versions are denied unless allowlisted. `authorize` offers an additional synchronous artifact-level permission check, while resolver authorization must still be enforced by your server or trusted application layer.
-
-Treat a changed input contract or changed visual meaning as a new artifact version. Keep earlier versions registered while old conversations, saved responses, or retries can still be displayed. To deprecate a version, remove it from `allowedArtifactVersions` first, migrate or expire retained content, then remove it from the registry. Test valid and invalid envelopes, permission-denied, loading, unavailable, resolver-error, retry, and keyboard/screen-reader states. Never rely on an artifact ID as authorization; authorize every resolver request on the host.
-
-## Styling
-
-The package ships its compiled renderer styles and does not require a Tailwind configuration in your application. Component-specific rules are scoped to `.markdown-render`; import the stylesheet once where global styles are allowed:
-
-```ts
-import "markdown-flow/styles.css";
-```
-
-The component is responsive by default. It respects a visitor's `prefers-reduced-motion` setting and keeps wide tables, diagrams, and math readable on small screens.
-
-## Package contents
-
-The npm tarball intentionally contains only the distributable library, its generated type declarations, compiled styles, and KaTeX fonts required for mathematical notation. It does not ship the Next.js playground, source files, development tooling, or repository-only assets.
-
-## Quality and compatibility
-
-The published package has focused safeguards for the parts most likely to regress in a renderer:
-
-- **Accessibility contracts** cover semantic labels and state for charts, citations, tabs, accordions, and progress indicators.
-- **Render regression checks** verify sanitization, component overrides, custom blocks, core rendering, and the server entry against representative Markdown.
-- **React compatibility** installs the packed tarball in clean React 18 and React 19 consumers, then server-renders both the interactive and static entries.
-- **Package-size budgets** fail when the public JavaScript or CSS entry points grow beyond their approved limits.
-- **CI** runs these checks plus linting and publish-content verification on pull requests and `main` updates.
-
-Run the complete local quality suite after building a change:
+Review the package locally before publishing:
 
 ```bash
-npm test
+npm run lint
+npm run build:package
+npm run test:render
+npm run check:size
 npm run test:compat
 npm pack --dry-run
 ```
 
-`test:compat` intentionally performs temporary npm installs for React 18 and React 19. It never changes this repository or publishes a package.
-
-### 0.1.1 → 0.1.2 controlled stress test
-
-The following local release comparison used the published `0.1.1` package and the packed `0.1.2` candidate in the same isolated React 19.2.4 SSR environment. Each timing alternated package order across six rounds to reduce warm-up bias. Results are directional rather than a guarantee for every application.
-
-| Scenario | Workload | 0.1.1 | 0.1.2 | Change |
-| --- | --- | ---: | ---: | ---: |
-| Small Markdown | 3,000 renders × 6 rounds | 6,319 renders/s | 6,641 renders/s | 4.8% faster |
-| Rich blocks | 1,500 renders × 6 rounds | 5,191 renders/s | 5,154 renders/s | 0.7% slower* |
-| Large document | 9,731-character source → 89,104-character HTML | 56.9 renders/s | 60.9 renders/s | 6.6% faster |
-
-\*The rich-block difference is within normal benchmark noise; the default root renderer remains effectively performance-neutral in this comparison.
-
-The additional release safeguards have a deliberately small distribution impact: root ESM is **+1.4 kB**, root CJS is **+1.5 kB**, root CSS is **+348 B**, and the npm tarball is **+17.2 kB (1.9%)**. For consumers that intentionally need only sanitized GitHub-flavored Markdown, the optional `core` entry is about **5.7 kB ESM including its shared chunk**, compared with about **67.7 kB** for the full root entry.
-
-## Safety and content model
-
-### Production AI checklist
-
-Treat model output as untrusted at every boundary. Use `renderPolicy` to allow only the blocks, artifacts, URLs, dataset IDs, versions, and data sizes appropriate for the product. Do not enable generated HTML, JavaScript, CSS, arbitrary embeds, or arbitrary component selection. Keep external image and link host allowlists in the host application; Mermaid uses Mermaid's strict security level, but it should still be size-limited and treated as untrusted SVG content. Media blocks are previews rather than executable embeds. Custom renderers must not use `dangerouslySetInnerHTML` with model input and must keep every action, permission check, and data resolver host-owned.
-
-`telemetry` on `RichMarkdown` and `StreamingRichMarkdown` receives privacy-safe block, fallback, stream, render-duration, and resolver-outcome events. The package never includes model text, URLs, citation contents, dataset rows, or resolver messages in those events. Attach only a host-generated trace ID or non-sensitive surface name; apply sampling and retention rules in your telemetry system.
-
-Before release, replay captured provider streams (including fence delimiters split across chunks), check pending/error states with a screen reader, and enforce `npm run check:size`. The package budgets the AI entry point at 40 kB ESM / 130 kB CommonJS; CommonJS contains the renderer required for streaming output, while ESM consumers receive shared chunks. Completed stream segments stay stable while only the trailing segment changes. Moderate prompts and completions before display, retain prompts/responses and telemetry only as long as required, isolate resolver caches and authorization by tenant and user, and alert on invalid-block, fallback, denial, and provider-error rates.
-
-### Protocol migration policy
-
-`markdown-flow/v1` remains compatible for all additive changes. A breaking envelope or block-semantics change uses a new protocol name such as `markdown-flow/v2`; never silently reinterpret stored or replayed `v1` responses. During a migration, accept both versions explicitly, keep the old policy and schemas available, emit version-level telemetry, migrate retained fixtures/responses with host authorization intact, then remove the old version only after the published support window. Unknown protocol versions must fail closed with a readable fallback.
-
-### LLM-ready release notes
-
-The AI entry point now has replay coverage for provider chunk boundaries, accessibility coverage for pending and error states, AI bundle budgets, optional privacy-safe telemetry, and documented operational and protocol-migration guidance.
-
-- GitHub-flavored Markdown and mathematical notation are supported.
-- Rendered Markdown is sanitized before output.
-- Custom block renderers receive text-only fenced content; they do not bypass sanitization.
-- Rich block configuration is parsed defensively; malformed configuration degrades gracefully.
-- Link previews are informational cards, not third-party page embeds.
-
-If you render content from untrusted users, continue to apply your usual product-level moderation, authorization, and data-handling rules.
-
-## Playground and examples
-
-The repository contains a complete live playground and examples for every format:
+Publish only after review:
 
 ```bash
-git clone https://github.com/hrisheesh/markdown-flow.git
-cd markdown-flow
-npm install
-npm run dev
+npm login
+npm publish --access public
+npm view markdown-flow@0.1.3 version
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to explore, edit, and copy rich-block source.
-
-Small copy-ready starting points are also included in the repository:
-
-- [`examples/react-vite.tsx`](examples/react-vite.tsx) — standard React/Vite client rendering.
-- [`examples/next-app-router.tsx`](examples/next-app-router.tsx) — static Markdown in a Next.js App Router Server Component.
-
-## Repository quality
-
-Every pull request and update to `main` verifies linting, library compilation, render contracts, accessibility semantics, React peer compatibility, size budgets, and the exact contents that npm would publish.
+`npm publish` runs `prepack`, which rebuilds the package and removes source maps from the public tarball. It does not publish this repository's ignored planning files.
 
 ## License
 
-This package is currently published without a declared open-source license. Contact the repository owner before redistributing or using it beyond evaluation.
+MIT © 2026 Hrisheesh Kumar. See [LICENSE](LICENSE).
