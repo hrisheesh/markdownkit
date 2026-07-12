@@ -7,12 +7,12 @@ Markdown Flow separates what a model may describe from what the application may 
 Retrieve and authorize sources on the server. Give the model bounded excerpts and stable IDs, then supply the full trusted citation metadata alongside the rendered response.
 
 ```text
-Prompt context: Source [policy-42] — approved excerpt
-Model output: The retention period is 30 days [policy-42].
+Prompt context: Source [cite:policy-42] — approved excerpt
+Model output: The retention period is 30 days [cite:policy-42].
 Renderer metadata: { id, chunk_id, document_id, filename, text_preview }
 ```
 
-The model can reference `[policy-42]`; it cannot use that text as authority to fetch another document. A `citationResolver` must enforce tenant and user access before it returns any record.
+The model can reference `[cite:policy-42]`; it cannot use that text as authority to fetch another document. A `citationResolver` must enforce tenant and user access before it returns any record.
 
 ## Dataset-backed charts
 

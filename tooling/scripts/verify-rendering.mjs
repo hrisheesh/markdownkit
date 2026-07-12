@@ -11,6 +11,10 @@ const { RichMarkdown } = require(root);
 const { validateMarkdownFlowBlock } = require(root);
 const {
   MarkdownFlowStreamParser,
+  normalizeMarkdownFlowContent,
+  joinMarkdownFlowNodes,
+  extractMarkdownFlowCitationIds,
+  AIResponse,
   StreamingRichMarkdown,
   createMarkdownFlowInstructions,
   markdownFlowResponseSchema,
@@ -157,6 +161,20 @@ for (const character of streamedContent) streamParser.append(character);
 streamParser.finish();
 assert.equal(streamParser.getSegments().map((segment) => segment.content).join(""), streamedContent);
 assert.equal(streamParser.getSegments().filter((segment) => segment.type === "block").length, 1);
+assert.equal(streamParser.getSegments().find((segment) => segment.type === "block")?.lifecycle, "ready");
+
+const normalizedPartial = normalizeMarkdownFlowContent("Before\n\n```callout\n{\"title\":\"Partial\"}", { complete: false });
+assert.equal(joinMarkdownFlowNodes(normalizedPartial), "Before\n\n```callout\n{\"title\":\"Partial\"}");
+assert.deepEqual(normalizedPartial.at(-1)?.type, "pending");
+assert.equal(normalizedPartial.at(-1)?.lifecycle, "pending");
+
+const ordinaryCodeParser = new MarkdownFlowStreamParser();
+const ordinaryCode = "Before\n\n```typescript\nconst answer = 42;\n```\n\nAfter";
+for (const character of ordinaryCode) ordinaryCodeParser.append(character);
+ordinaryCodeParser.finish();
+assert.equal(ordinaryCodeParser.getSegments().map((segment) => segment.content).join(""), ordinaryCode);
+assert.equal(ordinaryCodeParser.getSegments().some((segment) => segment.type === "pending"), false);
+assert.equal(ordinaryCodeParser.getSegments().some((segment) => segment.type === "block"), false);
 
 for (const replay of aiStreamReplays) {
   const parser = new MarkdownFlowStreamParser();
@@ -177,6 +195,24 @@ assert.match(pendingStreamingMarkup, /role="status"/);
 assert.match(pendingStreamingMarkup, /Incomplete AI block/);
 assert.match(render(StreamingRichMarkdown, { content: "", status: "error", error: "Provider stopped." }), /role="alert"/);
 
+const aiResponseMarkup = render(AIResponse, {
+  content: "Grounded answer [cite:source-1]\n\n```artifact\n{\"name\":\"order\",\"version\":\"1\",\"input\":{\"id\":\"A-42\"}}\n```",
+  status: "complete",
+  preset: "rag",
+  sources: [{ id: "source-1", chunk_id: "chunk-1", document_id: "doc-1", filename: "guide.md", text_preview: "Grounding source" }],
+  components: {
+    order: ({ input }) => React.createElement("div", { "data-order": input.id }, input.id),
+  },
+});
+assert.match(aiResponseMarkup, /data-order="A-42"/);
+assert.match(aiResponseMarkup, /Show source: guide.md/);
+assert.deepEqual(extractMarkdownFlowCitationIds("Step 1 [1] is ordinary prose; [cite:source-1] is a source."), ["source-1"]);
+const numericCitationMarkup = render(RichMarkdown, {
+  content: "Step 1 is not a source. [1] is not a source either.",
+  citations: [{ id: "1", chunk_id: "chunk-1", document_id: "doc-1", filename: "guide.md", text_preview: "Grounding source" }],
+});
+assert.doesNotMatch(numericCitationMarkup, /Show source: guide.md/);
+
 const instructions = createMarkdownFlowInstructions({
   allowedBlocks: ["callout"],
   availableDatasets: ["revenue-by-month"],
@@ -184,6 +220,7 @@ const instructions = createMarkdownFlowInstructions({
 });
 assert.match(instructions, /Allowed block types: callout/);
 assert.match(instructions, /Approved dataset IDs: revenue-by-month/);
+assert.match(instructions, /\[cite:source-id\]/);
 assert.deepEqual(markdownFlowResponseSchema.required, ["protocol", "content"]);
 assert.deepEqual(normalizeMarkdownFlowStreamChunk({ choices: [{ delta: { content: "Hello" } }] }), [{ type: "text", delta: "Hello" }]);
 assert.deepEqual(normalizeMarkdownFlowStreamChunk({ type: "message_stop" }), [{ type: "complete" }]);

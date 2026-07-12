@@ -1,7 +1,15 @@
 export { StreamingRichMarkdown, useMarkdownFlowStream } from "./StreamingRichMarkdown";
 export type { MarkdownFlowStreamController, StreamingRichMarkdownProps, UseMarkdownFlowStreamOptions } from "./StreamingRichMarkdown";
+export { AIResponse, useAIResponse } from "./AIResponse";
+export type { AIResponseComponent, AIResponseComponents, AIResponseProps, UseAIResponseOptions } from "./AIResponse";
+export { AI_RESPONSE_PRESET_POLICIES, AI_RESPONSE_PRESETS, getAIResponsePresetPolicy } from "./presets";
+export type { AIResponsePreset } from "./presets";
 export { applyMarkdownFlowResponse, applyMarkdownFlowStreamEvent, createMarkdownFlowStream, MarkdownFlowStreamParser } from "./stream";
 export type { MarkdownFlowStreamSegment, MarkdownFlowStreamSnapshot, MarkdownFlowStreamStatus } from "./stream";
+export { MarkdownFlowNodeParser, isMarkdownFlowStructuredLanguage, joinMarkdownFlowNodes, normalizeMarkdownFlowContent } from "./model";
+export type { MarkdownFlowBlockError, MarkdownFlowBlockErrorCode, MarkdownFlowBlockLifecycle, MarkdownFlowNode, MarkdownFlowStructuredLanguage } from "./model";
+export { extractMarkdownFlowCitationIds, tokenizeMarkdownFlowCitations, MARKDOWN_FLOW_CITATION_TOKEN } from "./citations";
+export type { MarkdownFlowCitationTextToken } from "./citations";
 export {
   DEFAULT_MARKDOWN_FLOW_RENDER_POLICY,
   isMarkdownFlowBlockType,

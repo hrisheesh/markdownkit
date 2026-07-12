@@ -82,7 +82,7 @@ export function createMarkdownFlowInstructions(options: MarkdownFlowInstructions
       ? "Each rich block must use strict JSON with double-quoted keys and strings; do not use JSON5, comments, trailing commas, HTML, CSS, JavaScript, React, or unapproved block types."
       : "Each rich block must contain a JSON object; do not emit HTML, CSS, JavaScript, React, or unapproved block types.",
     "Use the form ```block-type followed by its JSON configuration and a closing ``` fence. Keep prose in Markdown.",
-    "Never invent sources or data. Cite only supplied source IDs in normal Markdown, and reference approved datasets instead of copying large datasets.",
+    "Never invent sources or data. Cite only supplied source IDs using the exact token [cite:source-id] in normal Markdown, and reference approved datasets instead of copying large datasets.",
   ];
 
   if (datasets.length) lines.push(`Approved dataset IDs: ${datasets.join(", ")}.`);

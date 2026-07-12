@@ -84,7 +84,7 @@ type MarkdownFlowResponse = {
 `content` is normal Markdown. It can include approved fenced blocks. Citations and datasets are trusted metadata sent by the application, not claims created by the model.
 
 ````md
-The conversion rate improved after the onboarding change [onboarding-study].
+The conversion rate improved after the onboarding change [cite:onboarding-study].
 
 ```metrics
 {
@@ -324,7 +324,7 @@ data: {"type":"text","delta":"Revenue increased "}
 
 data: {"type":"citation","citation":{"id":"revenue-q2","chunk_id":"c-17","document_id":"d-4","filename":"Q2 report.pdf","text_preview":"..."}}
 
-data: {"type":"text","delta":"18%. [revenue-q2]"}
+data: {"type":"text","delta":"18%. [cite:revenue-q2]"}
 
 data: {"type":"complete"}
 
@@ -336,7 +336,7 @@ Available events are `text`, `citation`, `dataset`, `error`, and `complete`. The
 
 ### Citations
 
-Use stable source IDs in the answer, for example `[policy-42]`, and send the citation records alongside the response or as stream events.
+Use collision-safe source tokens in the answer, for example `[cite:policy-42]`, and send the citation records alongside the response or as stream events. Plain numbers and bracketed prose such as `[1]` are never treated as citations.
 
 ```tsx
 <StreamingRichMarkdown

@@ -1,6 +1,6 @@
 # Markdown Flow
 
-**The presentation layer for Markdown and AI answers in React.**
+**The React renderer for AI answers.**
 
 Markdown Flow turns ordinary Markdown into a finished product surface: readable prose, tables, mathematics, code, diagrams, charts, citations, and trusted application artifacts. It is built for React and Next.js teams that need a dependable renderer today—and a controlled, real-time answer UI when they add AI.
 
@@ -65,7 +65,65 @@ Markdown Flow supports React 18 and React 19. Import the stylesheet once in the 
 import "markdown-flow/styles.css";
 ```
 
-## Quick start
+## AI quick start
+
+```tsx
+import { AIResponse } from "markdown-flow/ai";
+import "markdown-flow/styles.css";
+
+export function AssistantAnswer({ content }: { content: string }) {
+  return <AIResponse content={content} />;
+}
+```
+
+`AIResponse` renders ordinary Markdown immediately and keeps incomplete Markdown Flow blocks in a stable pending state while a response streams. It defaults to the conservative `chat` preset.
+
+For token streaming, append provider deltas to the controller and pass it straight to the renderer:
+
+```tsx
+"use client";
+
+import { AIResponse, useAIResponse } from "markdown-flow/ai";
+import "markdown-flow/styles.css";
+
+export function Assistant() {
+  const response = useAIResponse();
+
+  // Pass provider text to response.append(delta), then call response.complete().
+  return <AIResponse stream={response} preset="technical" scrollBehavior="if-at-bottom" />;
+}
+```
+
+Sources stay host-owned and are displayed as citation badges. Trusted product UI is registered explicitly; the model can only request the component name and a validated object input.
+
+```tsx
+import { AIResponse } from "markdown-flow/ai";
+
+function OrderCard({ input }: { input: { id: string } }) {
+  return <a href={`/orders/${input.id}`}>Open order {input.id}</a>;
+}
+
+<AIResponse
+  content={answer}
+  sources={sources}
+  preset="rag"
+  components={{ order: OrderCard }}
+/>;
+```
+
+That component is available only through this fenced envelope:
+
+````md
+```artifact
+{"name":"order","version":"1","input":{"id":"A-42"}}
+```
+````
+
+Use `minimal`, `chat`, `rag`, `technical`, or `analytics` to choose the built-in block capability set. Pass `policy` when your product needs stricter limits or additional approved blocks.
+
+## Markdown rendering
+
+`RichMarkdown` remains available for documents and content products. It supports GitHub-flavored Markdown, tables, syntax-highlighted code, KaTeX math, Mermaid, charts, media, structured blocks, and citations.
 
 ```tsx
 import { RichMarkdown } from "markdown-flow";
@@ -76,8 +134,6 @@ export function Article({ content }: { content: string }) {
 }
 ```
 
-`RichMarkdown` supports GitHub-flavored Markdown, tables, syntax-highlighted code, KaTeX math, Mermaid, charts, media, structured blocks, and citations.
-
 For a compact, server-safe Markdown-only renderer:
 
 ```tsx
@@ -86,31 +142,6 @@ import "markdown-flow/core.css";
 
 export function Document({ content }: { content: string }) {
   return <StaticMarkdown content={content} />;
-}
-```
-
-## AI quick start
-
-Use the AI entry point for real-time answers. It accepts a simple accumulated string or a controller that receives provider-neutral events.
-
-```tsx
-"use client";
-
-import { StreamingRichMarkdown, useMarkdownFlowStream } from "markdown-flow/ai";
-import "markdown-flow/styles.css";
-
-export function Assistant() {
-  const stream = useMarkdownFlowStream();
-
-  // Pass text deltas from your LLM client to stream.append(delta).
-  // Call stream.complete() when the provider finishes.
-  return (
-    <StreamingRichMarkdown
-      stream={stream}
-      renderPolicy={{ allowedBlocks: ["callout", "metrics", "chart"] }}
-      scrollBehavior="if-at-bottom"
-    />
-  );
 }
 ```
 
@@ -135,7 +166,7 @@ Full request-to-response, SSE, RAG, dataset, artifact, security, and operations 
 Normal Markdown remains the default. A model uses a fenced block only when it communicates better than prose.
 
 ````md
-Revenue increased 18% quarter over quarter [revenue-q2].
+Revenue increased 18% quarter over quarter [cite:revenue-q2].
 
 ```chart
 {
@@ -197,7 +228,7 @@ The release also passed linting, package build, render verification, size budget
 | `markdown-flow` | Full rich Markdown rendering and strict policies |
 | `markdown-flow/core` | Lightweight sanitized GFM rendering |
 | `markdown-flow/server` | Server-safe static Markdown rendering |
-| `markdown-flow/ai` | Streaming, LLM contract, RAG, resolvers, artifacts, and telemetry |
+| `markdown-flow/ai` | `AIResponse`, `useAIResponse`, streaming, LLM contract, RAG, resolvers, artifacts, and telemetry |
 | `markdown-flow/styles.css` | Full renderer styles |
 | `markdown-flow/core.css` | Core renderer styles |
 

@@ -28,6 +28,7 @@
 *.pem
 plan.md
 MakingLLMReady.md
+MovingTo0.2.0.md
 
 # debug
 npm-debug.log*

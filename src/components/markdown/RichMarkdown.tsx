@@ -7,19 +7,12 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
-import { DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, isMarkdownFlowBlockType, type MarkdownFlowRenderPolicy } from "../../ai/protocol";
+import { DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, type MarkdownFlowRenderPolicy } from "../../ai/protocol";
 import { useMarkdownFlowCitations, type MarkdownFlowCitationResolver, type MarkdownFlowDatasetResolver } from "../../ai/data";
-import { validateMarkdownFlowBlock } from "../../ai/validation";
-import { validateMarkdownFlowArtifactBlock, type MarkdownFlowArtifactRegistry } from "../../ai/artifacts";
+import type { MarkdownFlowArtifactRegistry } from "../../ai/artifacts";
 import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "../../ai/telemetry";
-import RichBlockValidationError from "./RichBlockValidationError";
-import RichArtifactBlock from "./RichArtifactBlock";
-import RichChart from "./RichChart";
-import RichDatasetChart from "./RichDatasetChart";
-import RichCodeBlock from "./RichCodeBlock";
-import RichMediaBlock from "./RichMediaBlock";
-import RichStructuredBlock from "./RichStructuredBlock";
-import RichMermaid from "./RichMermaid";
+import { extractMarkdownFlowCitationIds, tokenizeMarkdownFlowCitations } from "../../ai/citations";
+import RichBlockRenderer from "./RichBlockRenderer";
 
 export interface Citation {
   id: string;
@@ -95,18 +88,13 @@ function InlineWithCitations({
 
   const renderNode = (node: ReactNode, keyPrefix: string): ReactNode => {
     if (typeof node === "string") {
-      return node
-        .split(/(\[[A-Za-z0-9_-]+\]|\b\d+\b)/g)
-        .filter(Boolean)
-        .map((part, index) => {
-          const citation = citationMap.get(part) ?? citationMap.get(part.replace(/[\[\]]/g, ""));
-
-          if (citation) {
-            return <CitationBadge key={`${keyPrefix}-citation-${part}-${index}`} citation={citation} />;
-          }
-
-          return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part}</React.Fragment>;
-        });
+      return tokenizeMarkdownFlowCitations(node).map((part, index) => {
+        if (part.type === "citation") {
+          const citation = citationMap.get(part.id);
+          if (citation) return <CitationBadge key={`${keyPrefix}-citation-${part.id}-${index}`} citation={citation} />;
+        }
+        return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part.value}</React.Fragment>;
+      });
     }
 
     if (Array.isArray(node)) {
@@ -156,35 +144,8 @@ export interface RichBlockRendererProps {
 export type RichBlockRenderer = (props: RichBlockRendererProps) => ReactNode;
 export type RichBlockRenderers = Readonly<Record<string, RichBlockRenderer | undefined>>;
 
-function ArtifactFallbackTelemetry({ telemetry, blockType }: { telemetry?: MarkdownFlowTelemetry; blockType: string }) {
-  React.useEffect(() => {
-    emitMarkdownFlowTelemetry(telemetry, { type: "block", outcome: "fallback", blockType });
-  }, [blockType, telemetry]);
-  return null;
-}
-
-function BlockAdherenceTelemetry({ active, blockType, telemetry }: { active: boolean; blockType: string; telemetry?: MarkdownFlowTelemetry }) {
-  React.useEffect(() => {
-    if (active) emitMarkdownFlowTelemetry(telemetry, { type: "block", outcome: "accepted", blockType });
-  }, [active, blockType, telemetry]);
-  return null;
-}
-
-/**
- * Renders safe Markdown plus Markdown Flow's chart, media, and structured blocks.
- * Import `markdown-flow/styles.css` once in the consuming application.
- */
-function hasDatasetReference(code: string): boolean {
-  try {
-    const config: unknown = JSON.parse(code);
-    return typeof config === "object" && config !== null && "dataset" in config;
-  } catch {
-    return false;
-  }
-}
-
 export default function RichMarkdown({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components }: RichMarkdownProps) {
-  const citationIds = React.useMemo(() => Array.from(content.matchAll(/\[([A-Za-z0-9_-]+)\]/g), (match) => match[1]), [content]);
+  const citationIds = React.useMemo(() => extractMarkdownFlowCitationIds(content), [content]);
   const resolvedCitations = useMarkdownFlowCitations(citationIds, citations, citationResolver, telemetry);
   const containsTooManyAiBlocks = renderPolicy
     && (content.match(/^```(?:callout|metrics|timeline|steps|comparison|accordion|tabs|cards|filetree|progress|checklist|status|quote|chart|mermaid|embed|image|map|artifact)\s*$/gm)?.length ?? 0)
@@ -287,54 +248,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
           code: ({ children, className }) => {
             const language = /language-([\w-]+)/.exec(className || "")?.[1];
             const code = String(children).replace(/\n$/, "");
-            const isStrictAiBlock = Boolean(language && renderPolicy && isMarkdownFlowBlockType(language));
-
-            if (language === "artifact" && (artifactRegistry || renderPolicy)) {
-              if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
-              const validation = validateMarkdownFlowArtifactBlock(code, artifactRegistry, renderPolicy);
-              if (!validation.valid) {
-                if (validation.definition) {
-                  return <><ArtifactFallbackTelemetry telemetry={telemetry} blockType="artifact" />{validation.definition.fallback({ name: validation.definition.name, version: validation.definition.version, reason: validation.reason, state: validation.state ?? "invalid" })}</>;
-                }
-                return <RichBlockValidationError reason={validation.reason} blockType="artifact" telemetry={telemetry} />;
-              }
-              return <RichArtifactBlock artifact={validation.artifact} telemetry={telemetry} />;
-            }
-
-            if (language && renderPolicy && isMarkdownFlowBlockType(language)) {
-              if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
-              const validation = validateMarkdownFlowBlock(language, code, renderPolicy);
-              if (!validation.valid) return <RichBlockValidationError reason={validation.reason} blockType={language} telemetry={telemetry} />;
-            }
-
-            const blockRenderer = language ? blockRenderers?.[language] : undefined;
-            if (blockRenderer && language) {
-              return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} />{blockRenderer({ language, code })}</>;
-            }
-
-            if (language === "mermaid") {
-              return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichMermaid chart={code} /></>;
-            }
-
-            if (language === "chart") {
-              if (hasDatasetReference(code)) {
-                if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require a render policy." blockType="chart" telemetry={telemetry} />;
-                return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichDatasetChart configStr={code} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></>;
-              }
-              return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichChart configStr={code} /></>;
-            }
-
-            if (["embed", "image", "map"].includes(language || "")) {
-              return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language || "unknown"} telemetry={telemetry} /><RichMediaBlock type={language as "embed" | "image" | "map"} configStr={code} /></>;
-            }
-
-            if (["callout", "metrics", "timeline", "steps", "comparison", "accordion", "tabs", "cards", "filetree", "progress", "checklist", "status", "quote"].includes(language || "")) {
-              return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language || "unknown"} telemetry={telemetry} /><RichStructuredBlock type={language as "callout" | "metrics" | "timeline" | "steps" | "comparison" | "accordion" | "tabs" | "cards" | "filetree" | "progress" | "checklist" | "status" | "quote"} configStr={code} /></>;
-            }
-
-            if (language) {
-              return <RichCodeBlock language={language} code={code} />;
-            }
+            if (language) return <RichBlockRenderer language={language} code={code} blockRenderers={blockRenderers} renderPolicy={renderPolicy} artifactRegistry={artifactRegistry} datasetResolver={datasetResolver} telemetry={telemetry} containsTooManyAiBlocks={containsTooManyAiBlocks} />;
 
             return (
               <code className="mx-0.5 break-words rounded-md bg-surface-soft px-1.5 py-0.5 font-mono text-[0.87em] font-medium text-ink">
