@@ -344,7 +344,7 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
           },
           table: ({ children }) => (
             <div className="internal-scroll my-8 max-w-full overflow-x-auto rounded-xl border border-hairline bg-white">
-              <table className="w-full min-w-[34rem] border-collapse text-left text-sm sm:min-w-[40rem]">{children}</table>
+              <table className="min-w-full w-max border-collapse text-left text-sm">{children}</table>
             </div>
           ),
           thead: ({ children }) => (
@@ -355,12 +355,12 @@ export default function RichMarkdown({ content, citations, blockRenderers, rende
           tbody: ({ children }) => <tbody className="divide-y divide-hairline-soft bg-white">{children}</tbody>,
           tr: ({ children }) => <tr className="transition-colors duration-150 hover:bg-surface/60">{children}</tr>,
           th: ({ children }) => (
-            <th className="whitespace-nowrap px-3 py-3 align-bottom font-bold sm:px-4">
+            <th className="whitespace-nowrap break-normal wrap-normal px-3 py-3 align-bottom font-bold sm:px-4">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-3 py-3 align-top text-charcoal sm:px-4">
+            <td className="max-w-[28rem] whitespace-normal break-normal wrap-normal px-3 py-3 align-top text-charcoal sm:px-4">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </td>
           ),

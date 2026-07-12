@@ -43,6 +43,18 @@ assert.doesNotMatch(documentMarkup, /window\.__unsafe/);
 const coreMarkup = render(RichMarkdownCore, { content: "## Core document\n\nSafe and portable." });
 assert.match(coreMarkup, /Core document/);
 
+const wideTableMarkup = render(RichMarkdown, {
+  content: "| Feature | Interactive charts | Reliable table fallback | Token overhead | Streaming friendly |\n| --- | --- | --- | --- | --- |\n| Long-form response | Works without breaking normal words into single characters | Preserves readable columns | Minimal | Yes |",
+});
+assert.match(wideTableMarkup, /min-w-full w-max/);
+assert.match(wideTableMarkup, /break-normal wrap-normal/);
+
+const duplicateComparisonMarkup = render(RichMarkdown, {
+  content: "```comparison\n{\"columns\":[\"Interactive charts\",\"Interactive charts\"],\"rows\":[{\"label\":\"Reliable table fallback\",\"values\":[\"Included\",\"Included\"]},{\"label\":\"Reliable table fallback\",\"values\":[true,true]}]}\n```",
+});
+assert.match(duplicateComparisonMarkup, /Interactive charts/);
+assert.match(duplicateComparisonMarkup, /Reliable table fallback/);
+
 const staticMarkup = render(StaticMarkdown, {
   content: "## Server document\n\n```chart\n{ type: 'line' }\n```",
 });

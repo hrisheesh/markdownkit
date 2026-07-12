@@ -44,6 +44,10 @@ type TooltipPayloadEntry = { color?: string; name?: string; value?: string | num
 const DEFAULT_COLORS = ["#007AFF", "#34C759", "#AF52DE", "#FF9F0A", "#FF375F"];
 const chartHeight = 304;
 
+function uniqueValues(values: readonly string[]) {
+  return [...new Set(values)];
+}
+
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadEntry[]; label?: string | number }) {
   if (!active || !payload?.length) return null;
 
@@ -52,7 +56,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       <p className="mb-2.5 text-xs font-semibold tracking-[-0.01em] text-[#1d1d1f]">{label}</p>
       <div className="space-y-1.5">
         {payload.map((entry, index) => (
-          <div key={`${entry.name}-${index}`} className="flex items-center gap-2 text-xs text-[#6e6e73]">
+          <div key={`tooltip-entry-${index}`} className="flex items-center gap-2 text-xs text-[#6e6e73]">
             <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
             <span className="capitalize">{entry.name}</span>
             <span className="ml-auto font-medium tabular-nums text-[#1d1d1f]">{entry.value}</span>
@@ -77,7 +81,14 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
     return <div className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">This chart configuration is incomplete.</div>;
   }
 
-  const { type, title, data, keys = ["value"], colors = DEFAULT_COLORS, lines = [], bars = [], areas = [], max = 100 } = config;
+  const { type, title, data, max = 100 } = config;
+  // LLM output is untrusted: de-duplicate series names so a repeated field cannot
+  // create duplicate React keys, duplicate SVG IDs, or duplicate chart traces.
+  const keys = uniqueValues(config.keys?.length ? config.keys : ["value"]);
+  const colors = config.colors?.length ? config.colors : DEFAULT_COLORS;
+  const bars = uniqueValues(config.bars ?? []);
+  const lines = uniqueValues(config.lines ?? []).filter((key) => !bars.includes(key));
+  const areas = uniqueValues(config.areas ?? []).filter((key) => !bars.includes(key) && !lines.includes(key));
   const series = type === "pie" || type === "funnel" || type === "gauge"
     ? data.map((item) => String(item.name ?? "value"))
     : type === "composed"
@@ -88,7 +99,7 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
   const axisProps = { tick: { fontSize: 11, fill: "#86868b", fontWeight: 500 }, axisLine: false, tickLine: false, tickMargin: 10 };
   const grid = <CartesianGrid strokeDasharray="2 6" vertical={false} stroke="#e5e5ea" />;
   const chartMargin = { top: 18, right: 12, left: -18, bottom: 2 };
-  const gradientId = (key: string) => `chart-${chartId}-${key.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const gradientId = (key: string, index: number) => `chart-${chartId}-${index}-${key.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const renderChart = () => {
     if (type === "sparkline") return (
@@ -116,7 +127,7 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
             const color = colors[index % colors.length];
 
             return (
-              <div key={`${item.name}-${index}`} className="grid grid-cols-[minmax(5.75rem,0.8fr)_minmax(0,2.2fr)_auto] items-center gap-3 sm:grid-cols-[minmax(7rem,1fr)_minmax(0,3fr)_auto] sm:gap-4">
+              <div key={`funnel-row-${index}`} className="grid grid-cols-[minmax(5.75rem,0.8fr)_minmax(0,2.2fr)_auto] items-center gap-3 sm:grid-cols-[minmax(7rem,1fr)_minmax(0,3fr)_auto] sm:gap-4">
                 <div className="min-w-0"><p className="truncate text-sm font-medium text-[#1d1d1f]">{item.name}</p>{conversion !== null && <p className="mt-0.5 text-[11px] text-[#86868b]">{conversion}% continue</p>}</div>
                 <div className="flex h-11 items-center justify-center rounded-xl bg-black/[0.035] px-1.5">
                   <div className="h-8 rounded-lg shadow-[0_5px_14px_rgba(0,0,0,0.10)] transition-[width,transform] duration-500 ease-out hover:scale-y-[1.04]" style={{ width: `${width}%`, backgroundColor: color }} />
@@ -149,14 +160,14 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
       const step = 680 / Math.max(waterfall.length, 1);
       const barWidth = Math.min(94, step * 0.58);
 
-      return <div className="h-full pt-2"><svg className="h-full w-full overflow-visible" viewBox={`0 0 720 ${height}`} role="img" aria-label={title || "Waterfall chart"}>{[0.25, 0.5, 0.75].map((fraction) => <line key={fraction} x1="28" x2="704" y1={top + plotHeight * fraction} y2={top + plotHeight * fraction} stroke="#e5e5ea" strokeDasharray="2 6" />)}{waterfall.map((item, index) => { const x = 42 + index * step; const startY = y(item.start); const endY = y(item.end); const rectY = Math.min(startY, endY); const rectHeight = Math.max(Math.abs(endY - startY), 3); const color = item.direction === "gain" ? colors[0] : "#ff375f"; return <g key={`${item.name}-${index}`} className="group"><title>{`${item.name}: ${item.amount >= 0 ? "+" : ""}${item.amount.toLocaleString()} · total ${item.end.toLocaleString()}`}</title>{index > 0 && <line x1={x - step + barWidth} x2={x} y1={y(waterfall[index - 1].end)} y2={startY} stroke="#c7c7cc" strokeDasharray="3 3" /> }<rect x={x} y={rectY} width={barWidth} height={rectHeight} rx="7" fill={color} className="transition-opacity duration-200 group-hover:opacity-80" /><text x={x + barWidth / 2} y={rectY - 8} textAnchor="middle" className="fill-[#515154] text-[11px] font-medium">{`${item.amount >= 0 ? "+" : ""}${item.amount}`}</text><text x={x + barWidth / 2} y={height - 8} textAnchor="middle" className="fill-[#86868b] text-[11px] font-medium">{String(item.name)}</text></g>; })}</svg></div>;
+      return <div className="h-full pt-2"><svg className="h-full w-full overflow-visible" viewBox={`0 0 720 ${height}`} role="img" aria-label={title || "Waterfall chart"}>{[0.25, 0.5, 0.75].map((fraction) => <line key={fraction} x1="28" x2="704" y1={top + plotHeight * fraction} y2={top + plotHeight * fraction} stroke="#e5e5ea" strokeDasharray="2 6" />)}{waterfall.map((item, index) => { const x = 42 + index * step; const startY = y(item.start); const endY = y(item.end); const rectY = Math.min(startY, endY); const rectHeight = Math.max(Math.abs(endY - startY), 3); const color = item.direction === "gain" ? colors[0] : "#ff375f"; return <g key={`waterfall-bar-${index}`} className="group"><title>{`${item.name}: ${item.amount >= 0 ? "+" : ""}${item.amount.toLocaleString()} · total ${item.end.toLocaleString()}`}</title>{index > 0 && <line x1={x - step + barWidth} x2={x} y1={y(waterfall[index - 1].end)} y2={startY} stroke="#c7c7cc" strokeDasharray="3 3" /> }<rect x={x} y={rectY} width={barWidth} height={rectHeight} rx="7" fill={color} className="transition-opacity duration-200 group-hover:opacity-80" /><text x={x + barWidth / 2} y={rectY - 8} textAnchor="middle" className="fill-[#515154] text-[11px] font-medium">{`${item.amount >= 0 ? "+" : ""}${item.amount}`}</text><text x={x + barWidth / 2} y={height - 8} textAnchor="middle" className="fill-[#86868b] text-[11px] font-medium">{String(item.name)}</text></g>; })}</svg></div>;
     }
     if (type === "bar") return (
       <ResponsiveContainer width="100%" height={chartHeight}>
         <BarChart data={data} margin={chartMargin}>
-          <defs>{keys.map((key, index) => <linearGradient key={key} id={gradientId(key)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.94" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0.62" /></linearGradient>)}</defs>
+          <defs>{keys.map((key, index) => <linearGradient key={key} id={gradientId(key, index)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.94" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0.62" /></linearGradient>)}</defs>
           {grid}<XAxis dataKey="name" {...axisProps} /><YAxis {...axisProps} /><Tooltip cursor={{ fill: "rgba(0,122,255,0.045)" }} content={<CustomTooltip />} />
-          {keys.map((key) => <Bar key={key} dataKey={key} fill={`url(#${gradientId(key)})`} radius={[6, 6, 2, 2]} maxBarSize={38} isAnimationActive />)}
+          {keys.map((key, index) => <Bar key={key} dataKey={key} fill={`url(#${gradientId(key, index)})`} radius={[6, 6, 2, 2]} maxBarSize={38} isAnimationActive />)}
         </BarChart>
       </ResponsiveContainer>
     );
@@ -171,9 +182,9 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
     if (type === "area") return (
       <ResponsiveContainer width="100%" height={chartHeight}>
         <AreaChart data={data} margin={chartMargin}>
-          <defs>{keys.map((key, index) => <linearGradient key={key} id={gradientId(key)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.3" /><stop offset="78%" stopColor={colors[index % colors.length]} stopOpacity="0.06" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0" /></linearGradient>)}</defs>
+          <defs>{keys.map((key, index) => <linearGradient key={key} id={gradientId(key, index)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.3" /><stop offset="78%" stopColor={colors[index % colors.length]} stopOpacity="0.06" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0" /></linearGradient>)}</defs>
           {grid}<XAxis dataKey="name" {...axisProps} /><YAxis {...axisProps} /><Tooltip cursor={{ stroke: "#d1d1d6", strokeWidth: 1 }} content={<CustomTooltip />} />
-          {keys.map((key, index) => <Area key={key} type="monotone" dataKey={key} stroke={colors[index % colors.length]} fill={`url(#${gradientId(key)})`} strokeWidth={2.75} activeDot={{ r: 4.5 }} isAnimationActive />)}
+          {keys.map((key, index) => <Area key={key} type="monotone" dataKey={key} stroke={colors[index % colors.length]} fill={`url(#${gradientId(key, index)})`} strokeWidth={2.75} activeDot={{ r: 4.5 }} isAnimationActive />)}
         </AreaChart>
       </ResponsiveContainer>
     );
@@ -189,11 +200,11 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
     if (type === "composed") return (
       <ResponsiveContainer width="100%" height={chartHeight}>
         <ComposedChart data={data} margin={{ top: 22, right: 2, left: -18, bottom: 2 }} barCategoryGap="38%">
-          <defs>{bars.map((key, index) => <linearGradient key={key} id={gradientId(key)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.9" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0.48" /></linearGradient>)}</defs>
+          <defs>{bars.map((key, index) => <linearGradient key={key} id={gradientId(key, index)} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={colors[index % colors.length]} stopOpacity="0.9" /><stop offset="100%" stopColor={colors[index % colors.length]} stopOpacity="0.48" /></linearGradient>)}</defs>
           {grid}<XAxis dataKey="name" {...axisProps} /><YAxis yAxisId="bars" {...axisProps} width={42} /><YAxis yAxisId="lines" orientation="right" tick={{ fontSize: 11, fill: "#86868b", fontWeight: 500 }} axisLine={false} tickLine={false} tickMargin={9} width={42} />
           <Tooltip cursor={{ fill: "rgba(0,122,255,0.04)" }} content={<CustomTooltip />} />
           {areas.map((key, index) => <Area key={key} yAxisId="lines" type="monotone" dataKey={key} fill={colors[(bars.length + lines.length + index) % colors.length]} fillOpacity={0.09} stroke="none" isAnimationActive />)}
-          {bars.map((key) => <Bar key={key} yAxisId="bars" dataKey={key} fill={`url(#${gradientId(key)})`} radius={[7, 7, 3, 3]} maxBarSize={32} isAnimationActive />)}
+          {bars.map((key, index) => <Bar key={key} yAxisId="bars" dataKey={key} fill={`url(#${gradientId(key, index)})`} radius={[7, 7, 3, 3]} maxBarSize={32} isAnimationActive />)}
           {lines.map((key, index) => <Line key={key} yAxisId="lines" type="monotone" dataKey={key} stroke={colors[(bars.length + index) % colors.length]} strokeWidth={3} dot={{ r: 2.5, fill: "#fff", strokeWidth: 2, stroke: colors[(bars.length + index) % colors.length] }} activeDot={{ r: 5, fill: colors[(bars.length + index) % colors.length], stroke: "#fff", strokeWidth: 3 }} isAnimationActive />)}
         </ComposedChart>
       </ResponsiveContainer>
@@ -216,7 +227,7 @@ export default function RichChart({ configStr, config: suppliedConfig }: { confi
     <section className="my-10 w-full min-w-0 border-y border-black/[0.08] bg-[#fbfbfd] py-5 sm:py-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-1 sm:px-2">
         <div><h3 className="text-[17px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">{title || "Untitled chart"}</h3><p className="mt-1 text-xs text-[#86868b]">{data.length} observations · {type} chart</p></div>
-        {series.length > 0 && <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2" aria-label="Chart legend">{series.map((name, index) => <span key={`${name}-${index}`} className="flex items-center gap-1.5 text-xs text-[#6e6e73]"><span className="size-1.5 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />{name}</span>)}</div>}
+        {series.length > 0 && <div className="flex max-w-full flex-wrap gap-x-4 gap-y-2" aria-label="Chart legend">{series.map((name, index) => <span key={`legend-item-${index}`} className="flex items-center gap-1.5 text-xs text-[#6e6e73]"><span className="size-1.5 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />{name}</span>)}</div>}
       </div>
       <div
         className={`mt-4 px-1 sm:mt-5 sm:px-2 ${frameClassName}`}
