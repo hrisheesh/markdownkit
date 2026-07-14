@@ -1,6 +1,6 @@
 {
   "name": "markdown-flow",
-  "version": "0.2.0",
+  "version": "0.2.4",
   "description": "Polished Markdown and streaming AI response UI for React, Next.js, RAG, citations, charts, and trusted artifacts.",
   "license": "MIT",
   "keywords": [
@@ -40,8 +40,12 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "markdown-flow": "./tooling/cli/markdown-flow.mjs"
+  },
   "files": [
-    "dist"
+    "dist",
+    "tooling/cli/markdown-flow.mjs"
   ],
   "exports": {
     ".": {
@@ -88,6 +92,8 @@
     "bench:streaming": "npm run build:package && node tooling/scripts/benchmark-stream-stability.mjs",
     "check:size": "node tooling/scripts/check-package-size.mjs",
     "test:compat": "node tooling/scripts/test-compatibility.mjs",
+    "test:cli": "node --test tests/cli/markdown-flow-cli.test.mjs",
+    "test:package-smoke": "npm run build:package && node --test tests/cli/package-smoke.test.mjs",
     "test": "npm run lint && npm run build:package && npm run test:unit && npm run test:render && npm run test:a11y && npm run test:security && npm run check:size",
     "clean:package-maps": "node tooling/scripts/remove-package-source-maps.mjs",
     "prepack": "npm run build:package && npm run clean:package-maps"

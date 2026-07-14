@@ -144,7 +144,7 @@ assert.match(
   /valid JSON/,
 );
 assert.match(
-  validateMarkdownFlowBlock("embed", '{"url":"https://example.com"}').reason,
+  validateMarkdownFlowBlock("embed", '{"url":"https://example.com"}', { allowExternalUrls: false }).reason,
   /disabled/,
 );
 

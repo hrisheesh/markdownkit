@@ -1,31 +1,31 @@
-@import "tailwindcss";
+@import "../../src/styles/package.css";
 @source "../../src/**/*.{ts,tsx}";
 
 :root {
-  --background: #f5f5f7;
-  --foreground: #1d1d1f;
+  --background: #f3f4f2;
+  --foreground: #151719;
 }
 
 @theme inline {
-  --color-primary: #171717;
+  --color-primary: #151719;
   --color-on-primary: #ffffff;
   --color-primary-soft: #292929;
   --color-brand-coral: #d84931;
   --color-brand-magenta: #b9549a;
-  --color-brand-blue: #4c5be8;
-  --color-brand-blue-mid: #6876ef;
-  --color-brand-blue-deep: #3744c9;
+  --color-brand-blue: #4f63d9;
+  --color-brand-blue-mid: #7182e8;
+  --color-brand-blue-deep: #3949b9;
   --color-brand-cyan: #5c8ee6;
   --color-brand-purple: #7655c9;
   --color-canvas: #ffffff;
-  --color-surface: #f7f7f5;
-  --color-surface-soft: #f0f0ed;
-  --color-hairline: #dfdfda;
-  --color-hairline-soft: #ebebe7;
-  --color-ink: #171717;
-  --color-charcoal: #393939;
-  --color-slate: #61615f;
-  --color-steel: #858581;
+  --color-surface: #f8f8f7;
+  --color-surface-soft: #f1f2f0;
+  --color-hairline: #dedfdb;
+  --color-hairline-soft: #ebebe8;
+  --color-ink: #151719;
+  --color-charcoal: #35383b;
+  --color-slate: #5f6368;
+  --color-steel: #85898f;
   --color-stone: #a4a49f;
   --color-muted: #b8b8b2;
   --color-success-bg: #eaf6ed;
@@ -47,7 +47,13 @@ body {
   overscroll-behavior: none;
 }
 
-body { font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif; }
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-synthesis: none;
+  letter-spacing: -0.008em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 button,
 input,
@@ -58,20 +64,22 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
 *:focus-visible {
-  outline: 2px solid rgba(76, 91, 232, 0.72);
+  outline: 2px solid rgb(79 99 217 / 68%);
   outline-offset: 3px;
 }
 
-::selection { background: rgba(76, 91, 232, 0.16); }
-textarea::selection { background: rgba(76, 91, 232, 0.2); }
+::selection { background: rgb(79 99 217 / 16%); }
+textarea::selection { background: rgb(79 99 217 / 20%); }
 
 .workspace-shell {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 50% -20%, rgb(255 255 255 / 78%), transparent 42rem),
+    var(--background);
 }
 
 .workspace-panel {
   min-width: 0;
-  background: #ffffff;
+  background: rgb(255 255 255 / 92%);
 }
 
 .workspace-divider {
@@ -100,6 +108,39 @@ textarea::selection { background: rgba(76, 91, 232, 0.2); }
 
 .chat-markdown > * { min-width: 0; }
 .chat-markdown svg { display: block; max-width: 100%; }
+.chat-markdown :where(*, *::before, *::after) { box-shadow: none !important; }
+.chat-markdown :where(.group:hover img, [style*="transition"]:hover) { transform: none !important; }
+
+/* Keep the playground preview aligned with the package surfaces even when
+   Next's CSS graph does not inline styles imported from the source package. */
+.chat-markdown :where(.rich-block-frame) {
+  position: relative;
+  border: 0;
+  border-radius: 1.375rem;
+  background: #fff;
+}
+.chat-markdown :where(.rich-block-card) {
+  border: 0;
+  border-radius: 1.125rem;
+  background: #fbfbfa;
+}
+.chat-markdown :where(.rich-block-eyebrow) { color: #85898f; font-size: .68rem; font-weight: 650; letter-spacing: .115em; line-height: 1.4; text-transform: uppercase; }
+.chat-markdown :where(.rich-block-title) { color: #151719; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.35; }
+.chat-markdown :where(.rich-block-copy) { color: #5f6368; font-size: .875rem; letter-spacing: -.006em; line-height: 1.65; }
+.chat-markdown :where(.rich-media-embed) { margin-block: 1.75rem; overflow: hidden; padding: 1.5rem; }
+.chat-markdown :where(.rich-media-embed-layout) { display: grid; align-items: center; gap: 1.25rem; grid-template-columns: auto minmax(0, 1fr) auto; }
+.chat-markdown :where(.rich-media-embed-icon) { display: flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: .95rem; background: rgb(79 99 217 / 9%); color: #4f63d9; }
+.chat-markdown :where(.rich-media-embed-action) { display: inline-flex; height: 2.5rem; align-items: center; justify-content: center; gap: .5rem; border-radius: .85rem; background: #151719; padding-inline: 1rem; color: #fff; font-size: .75rem; font-weight: 650; line-height: 1; }
+.chat-markdown :where(.rich-media-embed-action):hover { background: #35383b; }
+.chat-markdown :where(.rich-explore-surface) { padding-top: .3rem; }
+.chat-markdown :where(.rich-explore-tabs) { display: flex; gap: .35rem; overflow-x: auto; border-radius: 1.35rem; background: #f1f2f0; padding: .4rem; }
+.chat-markdown :where(.rich-explore-tab) { min-height: 2.8rem; flex: 1 0 auto; border-radius: 1rem; padding-inline: 1.1rem; color: #85898f; font-size: .875rem; font-weight: 600; letter-spacing: -.012em; }
+.chat-markdown :where(.rich-explore-tab.is-active) { background: #fff; color: #151719; }
+.chat-markdown :where(.rich-explore-panel) { max-width: 44rem; padding: 1.35rem 1.5rem .45rem; }
+.chat-markdown :where(.rich-explore-copy) { margin: 0; font-size: .95rem; line-height: 1.7; }
+.chat-markdown :where(.rich-highlights-grid) { display: grid; gap: .5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.chat-markdown :where(.rich-highlight-card) { min-height: 10rem; border-radius: 1.4rem; padding: 1.5rem; background: #f8f8f7; }
+.chat-markdown :where(.rich-highlight-card:nth-child(2)) { background: #f5f7ff; }
 
 .chat-markdown .katex-display {
   max-width: 100%;
@@ -125,4 +166,12 @@ textarea::selection { background: rgba(76, 91, 232, 0.2); }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+@media (max-width: 639px) {
+  .chat-markdown :where(.rich-block-frame) { border-radius: 1.125rem; }
+  .chat-markdown :where(.rich-media-embed) { padding: 1.25rem; }
+  .chat-markdown :where(.rich-media-embed-layout) { grid-template-columns: auto minmax(0, 1fr); }
+  .chat-markdown :where(.rich-media-embed-action) { grid-column: 1 / -1; width: 100%; }
+  .chat-markdown :where(.rich-highlights-grid) { grid-template-columns: 1fr; }
 }

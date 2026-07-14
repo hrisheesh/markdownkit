@@ -22,9 +22,9 @@ export function MarkdownFlowArtifactState({ state, message, onRetry }: MarkdownF
     invalid: "This artifact could not be rendered safely.",
   }[state]);
   return (
-    <div role={state === "error" || state === "invalid" ? "alert" : "status"} className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">
-      <p>{text}</p>
-      {onRetry && (state === "unavailable" || state === "error") && <button type="button" onClick={onRetry} className="mt-3 rounded-md border border-hairline px-3 py-1.5 font-medium text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40">Retry</button>}
+    <div role={state === "error" || state === "invalid" ? "alert" : "status"} aria-live="polite" className="rich-block-state my-6 px-4 py-4 text-sm sm:px-5">
+      <p className="leading-6">{text}</p>
+      {onRetry && (state === "unavailable" || state === "error") && <button type="button" onClick={onRetry} className="rich-block-control mt-3 border border-hairline bg-white px-3 text-xs font-semibold text-ink shadow-sm">Retry</button>}
     </div>
   );
 }

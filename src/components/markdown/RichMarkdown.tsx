@@ -10,6 +10,7 @@ import { useMarkdownFlowCitations, type MarkdownFlowCitationResolver, type Markd
 import type { MarkdownFlowArtifactRegistry } from "../../ai/artifacts";
 import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "../../ai/telemetry";
 import { extractMarkdownFlowCitationIds, tokenizeMarkdownFlowCitations } from "../../ai/citations";
+import type { MarkdownFlowNormalizationMode } from "../../ai/model";
 import RichBlockRenderer from "./RichBlockRenderer";
 
 export interface Citation {
@@ -132,6 +133,8 @@ export interface RichMarkdownProps {
   components?: Components;
   /** Enables KaTeX parsing when the content contains math delimiters. Set false to keep math as plain Markdown. */
   enableMath?: boolean;
+  /** Recovers predictable LLM aliases by default; strict mode requires canonical blocks. */
+  validationMode?: MarkdownFlowNormalizationMode;
 }
 
 export interface RichBlockRendererProps {
@@ -148,7 +151,7 @@ export interface RichMarkdownContentProps extends Omit<RichMarkdownProps, "enabl
   mathPlugins?: Pick<Options, "remarkPlugins" | "rehypePlugins">;
 }
 
-export function RichMarkdownContent({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components, mathPlugins }: RichMarkdownContentProps) {
+export function RichMarkdownContent({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components, mathPlugins, validationMode }: RichMarkdownContentProps) {
   const citationIds = React.useMemo(() => extractMarkdownFlowCitationIds(content), [content]);
   const resolvedCitations = useMarkdownFlowCitations(citationIds, citations, citationResolver, telemetry);
   const containsTooManyAiBlocks = renderPolicy
@@ -185,17 +188,17 @@ export function RichMarkdownContent({ content, citations, blockRenderers, render
         ]}
         components={{
           h1: ({ children }) => (
-            <h1 className="mb-7 mt-12 text-[2rem] font-semibold tracking-[-0.045em] leading-[1.08] text-ink first:mt-0 sm:mt-16 sm:text-[3.25rem]">
+            <h1 className="mb-7 mt-12 max-w-[22ch] text-[2rem] font-semibold leading-[1.12] tracking-[-0.047em] text-ink text-balance first:mt-0 sm:mt-16 sm:text-[2.75rem]">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="mb-4 mt-11 scroll-mt-8 border-b border-hairline-soft pb-3 text-[1.5rem] font-semibold tracking-[-0.035em] leading-tight text-ink first:mt-0 sm:mt-14 sm:text-[2rem]">
+            <h2 className="mb-4 mt-11 scroll-mt-8 text-[1.45rem] font-semibold leading-tight tracking-[-0.038em] text-ink text-balance first:mt-0 sm:mt-14 sm:text-[1.85rem]">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="mb-3 mt-8 scroll-mt-8 text-lg font-semibold tracking-[-0.025em] leading-snug text-ink first:mt-0 sm:mt-10 sm:text-xl">
+            <h3 className="mb-3 mt-8 scroll-mt-8 text-lg font-semibold leading-snug tracking-[-0.028em] text-ink text-balance first:mt-0 sm:mt-10 sm:text-xl">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </h3>
           ),
@@ -215,7 +218,7 @@ export function RichMarkdownContent({ content, citations, blockRenderers, render
             </h6>
           ),
           p: ({ children }) => (
-            <p className="my-5 leading-7 text-charcoal first:mt-0 last:mb-0 sm:leading-8">
+            <p className="my-5 leading-[1.78] text-charcoal first:mt-0 last:mb-0 sm:leading-[1.82]">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </p>
           ),
@@ -223,15 +226,15 @@ export function RichMarkdownContent({ content, citations, blockRenderers, render
           em: ({ children }) => <em className="italic text-charcoal">{children}</em>,
           del: ({ children }) => <del className="text-steel decoration-steel/70">{children}</del>,
           blockquote: ({ children }) => (
-            <blockquote className="my-7 border-l-2 border-brand-blue/70 pl-5 text-[0.98em] leading-7 text-slate sm:pl-6 sm:leading-8">
+            <blockquote className="relative my-8 rounded-r-2xl border-l-[3px] border-brand-blue/65 bg-gradient-to-r from-brand-blue/[0.055] to-transparent py-2 pl-5 pr-4 text-[0.98em] leading-7 text-slate sm:pl-6 sm:leading-8">
               {children}
             </blockquote>
           ),
           ul: ({ children }) => (
-            <ul className="my-5 list-disc space-y-2.5 pl-5 marker:text-brand-blue sm:pl-6">{children}</ul>
+            <ul className="my-5 list-disc space-y-2 pl-5 marker:text-brand-blue/85 sm:pl-6">{children}</ul>
           ),
           ol: ({ children }) => (
-            <ol className="my-5 list-decimal space-y-2.5 pl-5 marker:font-semibold marker:text-brand-blue sm:pl-6">
+            <ol className="my-5 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-brand-blue sm:pl-6">
               {children}
             </ol>
           ),
@@ -241,44 +244,42 @@ export function RichMarkdownContent({ content, citations, blockRenderers, render
             </li>
           ),
           input: ({ checked, type }) => (
-            <input
-              checked={checked}
-              readOnly
-              type={type}
-              className="mr-2 size-4 translate-y-0.5 rounded border-hairline accent-brand-blue"
-            />
+            <span className="relative mr-2 inline-flex size-[18px] translate-y-1 items-center justify-center">
+              <input checked={checked} readOnly type={type} className="peer size-full appearance-none rounded-full border border-hairline bg-white transition-colors checked:border-brand-blue checked:bg-brand-blue" />
+              {checked && <span className="pointer-events-none absolute text-[11px] font-bold leading-none text-white" aria-hidden="true">✓</span>}
+            </span>
           ),
           pre: ({ children }) => <>{children}</>,
           code: ({ children, className }) => {
             const language = /language-([\w-]+)/.exec(className || "")?.[1];
             const code = String(children).replace(/\n$/, "");
-            if (language) return <RichBlockRenderer language={language} code={code} blockRenderers={blockRenderers} renderPolicy={renderPolicy} artifactRegistry={artifactRegistry} datasetResolver={datasetResolver} telemetry={telemetry} containsTooManyAiBlocks={containsTooManyAiBlocks} />;
+            if (language) return <RichBlockRenderer language={language} code={code} blockRenderers={blockRenderers} renderPolicy={renderPolicy} artifactRegistry={artifactRegistry} datasetResolver={datasetResolver} telemetry={telemetry} validationMode={validationMode} containsTooManyAiBlocks={containsTooManyAiBlocks} />;
 
             return (
-              <code className="mx-0.5 break-words rounded-md bg-surface-soft px-1.5 py-0.5 font-mono text-[0.87em] font-medium text-ink">
+              <code className="mx-0.5 break-words rounded-md border border-ink/[0.055] bg-surface-soft/80 px-1.5 py-0.5 font-mono text-[0.86em] font-medium tracking-[-0.015em] text-ink">
                 {children}
               </code>
             );
           },
           table: ({ children }) => (
-            <div className="internal-scroll my-8 max-w-full overflow-x-auto rounded-xl border border-hairline bg-white">
+            <div className="internal-scroll my-8 max-w-full overflow-x-auto rounded-2xl border border-hairline-soft bg-white shadow-[0_12px_32px_-30px_rgba(18,20,22,0.45)]">
               <table className="min-w-full w-max border-collapse text-left text-sm">{children}</table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="border-b border-hairline bg-surface-soft text-[11px] font-semibold uppercase tracking-[0.08em] text-ink">
+            <thead className="bg-surface/80 text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">
               {children}
             </thead>
           ),
-          tbody: ({ children }) => <tbody className="divide-y divide-hairline-soft bg-white">{children}</tbody>,
-          tr: ({ children }) => <tr className="transition-colors duration-150 hover:bg-surface/60">{children}</tr>,
+          tbody: ({ children }) => <tbody className="divide-y divide-hairline-soft/80">{children}</tbody>,
+          tr: ({ children }) => <tr className="group transition-colors hover:bg-brand-blue/[0.018]">{children}</tr>,
           th: ({ children }) => (
-            <th className="whitespace-nowrap break-normal wrap-normal px-3 py-3 align-bottom font-bold sm:px-4">
+            <th className="whitespace-nowrap break-normal wrap-normal border-b border-hairline-soft px-4 py-3.5 align-bottom font-semibold sm:px-5">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </th>
           ),
           td: ({ children }) => (
-            <td className="max-w-[28rem] whitespace-normal break-normal wrap-normal px-3 py-3 align-top text-charcoal sm:px-4">
+            <td className="max-w-[28rem] whitespace-normal break-normal wrap-normal px-4 py-3.5 align-top leading-6 text-charcoal sm:px-5">
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </td>
           ),
@@ -287,19 +288,19 @@ export function RichMarkdownContent({ content, citations, blockRenderers, render
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-brand-blue underline decoration-brand-blue/35 underline-offset-4 transition-colors duration-150 hover:text-brand-blue-deep hover:decoration-brand-blue/80 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand-blue/35"
+              className="font-medium text-brand-blue underline decoration-brand-blue/30 decoration-[0.08em] underline-offset-[0.22em] transition-colors duration-150 hover:text-brand-blue-deep hover:decoration-brand-blue/75 focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-brand-blue/35"
             >
               <InlineWithCitations citations={resolvedCitations}>{children}</InlineWithCitations>
             </a>
           ),
-          hr: () => <hr className="my-10 border-t border-hairline-soft" />,
+          hr: () => <hr className="my-12 border-t border-hairline-soft" />,
           img: ({ src, alt, title }) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src || ""}
               alt={alt || ""}
               title={title}
-              className="my-8 h-auto max-h-[70svh] w-full rounded-xl border border-hairline-soft object-contain sm:max-h-[40rem]"
+              className="my-8 h-auto max-h-[70svh] w-full rounded-[1.75rem] bg-surface object-contain p-1 shadow-[0_16px_42px_-30px_rgba(18,20,22,0.5)] ring-1 ring-black/[0.045] sm:max-h-[40rem]"
               loading="lazy"
             />
           ),

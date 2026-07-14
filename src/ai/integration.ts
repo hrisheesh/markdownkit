@@ -2,10 +2,13 @@ import {
   MARKDOWN_FLOW_LLM_BLOCK_TYPES,
   MARKDOWN_FLOW_PROTOCOL,
   type MarkdownFlowBlockType,
-  type MarkdownFlowCitation,
   type MarkdownFlowProtocol,
+  type MarkdownFlowRenderPolicy,
   type MarkdownFlowStreamEvent,
 } from "./protocol";
+import { createMarkdownFlowBlockInstructions } from "./blockRegistry";
+import { createMarkdownFlowCitationGuidance, toMarkdownFlowSource, type MarkdownFlowSourceInput } from "./citations";
+import { getAIResponsePresetPolicy, type AIResponsePreset } from "./presets";
 
 export type MarkdownFlowJsonSchema = Readonly<Record<string, unknown>>;
 
@@ -16,12 +19,33 @@ export interface MarkdownFlowDatasetInstruction {
 
 export interface MarkdownFlowInstructionsOptions {
   protocol?: MarkdownFlowProtocol;
+  /** Uses the corresponding built-in policy unless `allowedBlocks` is supplied. */
+  preset?: AIResponsePreset;
   allowedBlocks?: readonly MarkdownFlowBlockType[];
   availableDatasets?: readonly (string | MarkdownFlowDatasetInstruction)[];
-  citations?: readonly Pick<MarkdownFlowCitation, "id" | "filename">[];
+  /** Trusted source metadata used to generate citation guidance. */
+  sources?: readonly MarkdownFlowSourceInput[];
+  /** Compatibility alias for sources. */
+  citations?: readonly MarkdownFlowSourceInput[];
   /** Require strict JSON inside rich blocks. Defaults to true for model output. */
   strict?: boolean;
 }
+
+export type MarkdownFlowValidationMode = "normalize" | "strict";
+
+export interface CreateMarkdownFlowOptions extends Omit<MarkdownFlowInstructionsOptions, "strict"> {
+  validationMode?: MarkdownFlowValidationMode;
+}
+
+export interface MarkdownFlowConfiguration {
+  instructions: string;
+  policy: MarkdownFlowRenderPolicy;
+  blockTypes: readonly MarkdownFlowBlockType[];
+  citationFormat: "[cite:source-id]";
+  version: MarkdownFlowProtocol;
+}
+
+export const MARKDOWN_FLOW_CITATION_FORMAT = "[cite:source-id]" as const;
 
 export interface MarkdownFlowToolDefinition {
   name: "markdown_flow_response";
@@ -69,10 +93,14 @@ function formatDataset(dataset: string | MarkdownFlowDatasetInstruction): string
  */
 export function createMarkdownFlowInstructions(options: MarkdownFlowInstructionsOptions = {}): string {
   const protocol = options.protocol ?? MARKDOWN_FLOW_PROTOCOL;
-  const allowedBlocks = options.allowedBlocks ?? MARKDOWN_FLOW_LLM_BLOCK_TYPES;
+  const allowedBlocks = options.allowedBlocks ?? (options.preset ? getAIResponsePresetPolicy(options.preset).allowedBlocks ?? [] : MARKDOWN_FLOW_LLM_BLOCK_TYPES);
   const strictJson = options.strict ?? true;
   const datasets = options.availableDatasets?.map(formatDataset) ?? [];
-  const citations = options.citations?.map((citation) => `${citation.id} (${citation.filename})`) ?? [];
+  const sources = options.sources ?? options.citations ?? [];
+  const citations = sources.map((source) => {
+    const normalized = toMarkdownFlowSource(source);
+    return normalized.title ? `${normalized.id} (${normalized.title})` : normalized.id;
+  });
 
   const lines = [
     `Markdown Flow contract: ${protocol}.`,
@@ -82,13 +110,50 @@ export function createMarkdownFlowInstructions(options: MarkdownFlowInstructions
       ? "Each rich block must use strict JSON with double-quoted keys and strings; do not use JSON5, comments, trailing commas, HTML, CSS, JavaScript, React, or unapproved block types."
       : "Each rich block must contain a JSON object; do not emit HTML, CSS, JavaScript, React, or unapproved block types.",
     "Use the form ```block-type followed by its JSON configuration and a closing ``` fence. Keep prose in Markdown.",
-    "Never invent sources or data. Cite only supplied source IDs using the exact token [cite:source-id] in normal Markdown, and reference approved datasets instead of copying large datasets.",
+    `Never invent sources or data. Cite only supplied source IDs using the exact token ${MARKDOWN_FLOW_CITATION_FORMAT} in normal Markdown, and reference approved datasets instead of copying large datasets.`,
   ];
 
+  if (allowedBlocks.length) lines.push("Enabled block contracts:\n" + createMarkdownFlowBlockInstructions(allowedBlocks).join("\n"));
+
   if (datasets.length) lines.push(`Approved dataset IDs: ${datasets.join(", ")}.`);
-  if (citations.length) lines.push(`Available citations: ${citations.join(", ")}.`);
+  if (citations.length) lines.push(`Available citations: ${citations.join(", ")}.`, createMarkdownFlowCitationGuidance(sources));
 
   return lines.join("\n");
+}
+
+/**
+ * Builds the complete, provider-neutral model contract for a response surface.
+ * The returned policy is host-owned and can be passed directly to rendering and
+ * validation APIs; sources remain instruction metadata only.
+ */
+export function createMarkdownFlow(options: CreateMarkdownFlowOptions = {}): MarkdownFlowConfiguration {
+  const preset = options.preset ?? "chat";
+  const presetPolicy = getAIResponsePresetPolicy(preset);
+  const blockTypes = options.allowedBlocks ?? presetPolicy.allowedBlocks ?? MARKDOWN_FLOW_LLM_BLOCK_TYPES;
+  const datasets = options.availableDatasets ?? [];
+  const datasetIds = datasets.map((dataset) => typeof dataset === "string" ? dataset : dataset.id);
+  const policy: MarkdownFlowRenderPolicy = {
+    ...presetPolicy,
+    allowedBlocks: blockTypes,
+    ...(datasets.length ? { allowedDatasetIds: datasetIds } : {}),
+  };
+  const sources = options.sources ?? options.citations;
+  const validationMode = options.validationMode ?? "normalize";
+  const version = options.protocol ?? MARKDOWN_FLOW_PROTOCOL;
+
+  return {
+    instructions: createMarkdownFlowInstructions({
+      ...options,
+      protocol: version,
+      allowedBlocks: blockTypes,
+      sources,
+      strict: validationMode === "strict",
+    }),
+    policy,
+    blockTypes,
+    citationFormat: MARKDOWN_FLOW_CITATION_FORMAT,
+    version,
+  };
 }
 
 /** Creates a fresh tool definition while preserving a provider-neutral shape. */

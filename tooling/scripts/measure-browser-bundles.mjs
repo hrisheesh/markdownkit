@@ -62,6 +62,8 @@ for (const measurement of measurements) {
 const rootMeasurement = measurements[0];
 const aiMeasurement = measurements[1];
 assert.ok(rootMeasurement.initial.bytes <= 95 * 1024, `Root ESM initial graph is ${format(rootMeasurement.initial.bytes)}; budget is 95.0 kB`);
-assert.ok(aiMeasurement.initial.bytes <= 100 * 1024, `AI ESM initial graph is ${format(aiMeasurement.initial.bytes)}; budget is 100.0 kB`);
+// 0.2.4 adds the shared visual language and calm streaming states to the
+// public AI renderer while keeping feature-heavy renderers lazy.
+assert.ok(aiMeasurement.initial.bytes <= 122 * 1024, `AI ESM initial graph is ${format(aiMeasurement.initial.bytes)}; budget is 122.0 kB`);
 assert.ok(aiMeasurement.lazyChunks >= 4, "AI ESM entry must retain separate lazy rich-feature chunks.");
 console.log("Browser ESM import-graph budgets passed.");

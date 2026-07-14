@@ -112,7 +112,9 @@ export const DEFAULT_MARKDOWN_FLOW_RENDER_POLICY: Readonly<Required<MarkdownFlow
   maxBlocks: 32,
   maxTableRows: 250,
   maxChartDataPoints: 250,
-  allowExternalUrls: false,
+  // A response renderer should work without an onboarding policy. Hosts that
+  // need a closed surface can opt into a restrictive policy explicitly.
+  allowExternalUrls: true,
 };
 
 export function isMarkdownFlowBlockType(value: string): value is MarkdownFlowBlockType {

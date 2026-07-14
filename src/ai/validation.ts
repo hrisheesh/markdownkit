@@ -9,6 +9,19 @@ export type MarkdownFlowBlockValidationResult =
   | { valid: true }
   | { valid: false; reason: string };
 
+export type MarkdownFlowValidationMode = "normalize" | "strict";
+
+export interface MarkdownFlowBlockValidationOptions {
+  /** Accept harmless, documented block-language aliases. Defaults to `normalize`. */
+  normalization?: MarkdownFlowValidationMode;
+}
+
+export interface MarkdownFlowNormalizedBlock {
+  language: MarkdownFlowBlockType;
+  code: string;
+  normalized: boolean;
+}
+
 type JsonRecord = Record<string, unknown>;
 
 const structuredTypes = new Set<MarkdownFlowBlockType>([
@@ -18,6 +31,18 @@ const structuredTypes = new Set<MarkdownFlowBlockType>([
 const chartTypes = new Set(["bar", "line", "pie", "area", "radar", "composed", "sparkline", "scatter", "funnel", "gauge", "heatmap", "waterfall", "cohort"]);
 const tones = new Set(["note", "insight", "success", "warning"]);
 const itemStatuses = new Set(["complete", "current", "upcoming", "blocked"]);
+const languageAliases: Readonly<Record<string, MarkdownFlowBlockType>> = {
+  mermaidjs: "mermaid",
+  "mermaid-js": "mermaid",
+};
+
+function normalizeLanguage(language: string, options: MarkdownFlowBlockValidationOptions): MarkdownFlowBlockType | undefined {
+  if (isMarkdownFlowBlockType(language)) return language;
+  if (options.normalization === "strict") return undefined;
+
+  const normalized = language.toLowerCase();
+  return isMarkdownFlowBlockType(normalized) ? normalized : languageAliases[normalized];
+}
 
 function mergePolicy(policy?: MarkdownFlowRenderPolicy): Required<MarkdownFlowRenderPolicy> {
   return { ...DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, ...policy };
@@ -25,6 +50,65 @@ function mergePolicy(policy?: MarkdownFlowRenderPolicy): Required<MarkdownFlowRe
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function renameKey(value: JsonRecord, from: string, to: string): boolean {
+  if (!(from in value) || to in value) return false;
+  value[to] = value[from];
+  delete value[from];
+  return true;
+}
+
+function normalizeStructuredConfig(type: MarkdownFlowBlockType, config: JsonRecord): boolean {
+  let changed = false;
+  if (["timeline", "steps", "accordion", "progress", "checklist", "status"].includes(type)) {
+    for (const alias of ["milestones", "steps", "services", "tasks"]) changed = renameKey(config, alias, "items") || changed;
+  }
+  if (type === "filetree") changed = renameKey(config, "entries", "files") || changed;
+  if (type === "quote") changed = renameKey(config, "text", "body") || changed;
+  if ((type === "callout" || type === "quote") && "content" in config) changed = renameKey(config, "content", "body") || changed;
+
+  if (Array.isArray(config.items)) {
+    for (const item of config.items) {
+      if (!isRecord(item)) continue;
+      if (type !== "accordion") changed = renameKey(item, "content", "description") || changed;
+      if (type === "checklist") changed = renameKey(item, "completed", "checked") || changed;
+    }
+  }
+  return changed;
+}
+
+/**
+ * Canonicalizes the documented, unambiguous LLM variations before validation
+ * and rendering. It intentionally does not translate foreign chart schemas.
+ */
+export function normalizeMarkdownFlowBlock(
+  language: string,
+  code: string,
+  options: MarkdownFlowBlockValidationOptions = {},
+): MarkdownFlowNormalizedBlock | undefined {
+  const normalizedLanguage = normalizeLanguage(language, options);
+  if (!normalizedLanguage) return undefined;
+  if (options.normalization === "strict" || normalizedLanguage === "mermaid") {
+    return { language: normalizedLanguage, code, normalized: normalizedLanguage !== language };
+  }
+
+  let config: unknown;
+  try {
+    config = JSON.parse(code);
+  } catch {
+    return { language: normalizedLanguage, code, normalized: normalizedLanguage !== language };
+  }
+  if (!isRecord(config)) return { language: normalizedLanguage, code, normalized: normalizedLanguage !== language };
+
+  let normalized = normalizedLanguage !== language;
+  if (normalizedLanguage === "chart") {
+    normalized = renameKey(config, "xAxis", "x") || normalized;
+    normalized = renameKey(config, "yAxis", "y") || normalized;
+  } else if (structuredTypes.has(normalizedLanguage)) {
+    normalized = normalizeStructuredConfig(normalizedLanguage, config) || normalized;
+  }
+  return { language: normalizedLanguage, code: normalized ? JSON.stringify(config) : code, normalized };
 }
 
 function hasOnlyKeys(value: JsonRecord, allowed: readonly string[]): boolean {
@@ -149,7 +233,22 @@ function validateChart(config: JsonRecord, policy: Required<MarkdownFlowRenderPo
     if (!allowedFields || requestedFields.some((field) => !allowedFields.includes(field))) return "The chart requests fields outside the approved dataset schema.";
   }
   if (![config.title].every(optionalString) || !optionalNumber(config.max)) return "Chart text and numeric properties are invalid.";
-  return ["x", "y", "keys", "colors", "lines", "bars", "areas"].every((key) => config[key] === undefined || (key === "x" || key === "y" ? isString(config[key]) : Array.isArray(config[key]) && config[key].every(isString))) ? null : "Chart series properties must be string arrays.";
+  if (!["x", "y", "keys", "colors", "lines", "bars", "areas"].every((key) => config[key] === undefined || (key === "x" || key === "y" ? isString(config[key]) : Array.isArray(config[key]) && config[key].every(isString)))) return "Chart series properties must be strings or string arrays.";
+  if (isDatasetChart) return null;
+  if (config.type === "scatter" && (!isString(config.x) || !isString(config.y))) return 'Scatter charts require both numeric "x" and "y" fields.';
+
+  const data = config.data as JsonRecord[];
+  const xKey = (config.x as string | undefined) ?? "name";
+  const seriesKeys = Array.isArray(config.keys) && config.keys.length ? config.keys as string[] : isString(config.y) ? [config.y] : ["value"];
+  const fields = config.type === "composed"
+    ? [...((config.bars as string[] | undefined) ?? []), ...((config.lines as string[] | undefined) ?? []), ...((config.areas as string[] | undefined) ?? [])]
+    : seriesKeys;
+  const numericFields = config.type === "scatter" ? [xKey, config.y as string] : fields.length ? fields : seriesKeys;
+  const missingField = [xKey, ...numericFields].find((field) => data.some((row) => row[field] === undefined));
+  if (missingField) return `Chart field "${missingField}" is missing from one or more data rows. Use an existing field name for "x", "y", or "keys".`;
+  const nonNumeric = numericFields.find((field) => data.some((row) => typeof row[field] !== "number" || !Number.isFinite(row[field] as number)));
+  if (nonNumeric) return `Chart series field "${nonNumeric}" must contain finite numeric values in every data row.`;
+  return null;
 }
 
 function validateMedia(type: MarkdownFlowBlockType, config: JsonRecord, policy: Required<MarkdownFlowRenderPolicy>): string | null {
@@ -195,26 +294,30 @@ export function validateMarkdownFlowBlock(
   language: string,
   code: string,
   renderPolicy?: MarkdownFlowRenderPolicy,
+  options: MarkdownFlowBlockValidationOptions = {},
 ): MarkdownFlowBlockValidationResult {
-  if (!isMarkdownFlowBlockType(language)) return { valid: false, reason: "This block type is not part of the Markdown Flow protocol." };
+  const block = normalizeMarkdownFlowBlock(language, code, options);
+  if (!block) return { valid: false, reason: `Unsupported AI block language "${language}". Use an enabled Markdown Flow block type.` };
+  const { language: normalizedLanguage, code: normalizedCode } = block;
   const policy = mergePolicy(renderPolicy);
-  if (!policy.allowedBlocks.includes(language)) return { valid: false, reason: "This block type is disabled by this render policy." };
-  if (code.length > policy.maxBlockCharacters) return { valid: false, reason: "This block exceeds the configured size limit." };
-  if (language === "mermaid") return code.trim() ? { valid: true } : { valid: false, reason: "A Mermaid block cannot be empty." };
+  if (!policy.allowedBlocks.includes(normalizedLanguage)) return { valid: false, reason: `The "${normalizedLanguage}" block type is disabled by this render policy.` };
+  if (normalizedCode.length > policy.maxBlockCharacters) return { valid: false, reason: "This block exceeds the configured size limit." };
+  if (normalizedLanguage === "mermaid") return normalizedCode.trim() ? { valid: true } : { valid: false, reason: "A Mermaid block cannot be empty. Put the diagram definition inside the fence." };
 
   let config: unknown;
   try {
-    config = JSON.parse(code);
-  } catch {
-    return { valid: false, reason: "AI blocks must contain valid JSON." };
+    config = JSON.parse(normalizedCode);
+  } catch (error) {
+    const detail = error instanceof SyntaxError && error.message ? ` ${error.message}` : "";
+    return { valid: false, reason: `AI blocks must contain valid JSON.${detail}` };
   }
   if (!isRecord(config)) return { valid: false, reason: "A block configuration must be a JSON object." };
 
-  const reason = structuredTypes.has(language)
-    ? validateStructuredBlock(language, config, policy)
-    : language === "chart"
+  const reason = structuredTypes.has(normalizedLanguage)
+    ? validateStructuredBlock(normalizedLanguage, config, policy)
+    : normalizedLanguage === "chart"
       ? validateChart(config, policy)
-      : validateMedia(language, config, policy);
+      : validateMedia(normalizedLanguage, config, policy);
 
   return reason ? { valid: false, reason } : { valid: true };
 }

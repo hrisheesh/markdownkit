@@ -20,11 +20,11 @@ export default function RichCodeBlock({ language, code }: { language: string; co
   }
 
   return (
-    <section className="my-8 overflow-hidden rounded-2xl border border-black/[0.08] bg-[#f7f7f9] text-[#1d1d1f]">
-      <header className="flex items-center justify-between gap-3 border-b border-black/[0.07] bg-white/70 px-3 py-2.5 backdrop-blur-sm sm:px-4">
+    <section className="rich-block-frame my-8 w-full min-w-0 max-w-full overflow-hidden bg-[#f8f8fa] text-[#1d1d1f]">
+      <header className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] bg-white/75 px-3 py-2.5 backdrop-blur-sm sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="size-1.5 shrink-0 rounded-full bg-brand-blue" aria-hidden="true" />
-          <span className="truncate font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-[#6e6e73]">
+          <span className="size-1.5 shrink-0 rounded-full bg-brand-blue shadow-[0_0_0_3px_rgba(79,99,217,0.08)]" aria-hidden="true" />
+          <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#73777d]">
             {language || "text"}
           </span>
         </div>
@@ -32,8 +32,8 @@ export default function RichCodeBlock({ language, code }: { language: string; co
           <button
             type="button"
             onClick={() => setWrapLines((value) => !value)}
-            className={`inline-flex size-8 items-center justify-center rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/70 ${
-              wrapLines ? "bg-[#e8f2ff] text-[#007aff]" : "text-[#6e6e73] hover:bg-black/[0.05] hover:text-[#1d1d1f]"
+            className={`rich-block-control size-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/55 ${
+              wrapLines ? "bg-brand-blue/[0.09] text-brand-blue" : ""
             }`}
             aria-label={wrapLines ? "Disable line wrapping" : "Wrap long lines"}
             title={wrapLines ? "Disable line wrapping" : "Wrap long lines"}
@@ -43,24 +43,24 @@ export default function RichCodeBlock({ language, code }: { language: string; co
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-[#6e6e73] transition-colors duration-150 hover:bg-black/[0.05] hover:text-[#1d1d1f] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/70"
+            className="rich-block-control gap-1.5 px-2.5 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/55"
             aria-label={copied ? "Code copied" : "Copy code"}
           >
             {copied ? <Check size={14} className="text-[#34c759]" aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
-            <span>{copied ? "Copied" : "Copy"}</span>
+            <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
           </button>
         </div>
       </header>
-      <div className="internal-scroll max-h-[60svh] overflow-auto sm:max-h-[34rem]">
+      <div className="internal-scroll max-h-[56svh] w-full min-w-0 max-w-full overflow-auto sm:max-h-[34rem]">
         <SyntaxHighlighter
           language={language || "text"}
           style={oneLight}
           customStyle={{
             margin: 0,
-            padding: "1.25rem 1rem",
-            background: "#f7f7f9",
+            padding: "1.125rem 1rem 1.25rem",
+            background: "#f8f8fa",
             fontSize: "13px",
-            lineHeight: "1.7",
+            lineHeight: "1.75",
             overflow: "visible",
           }}
           wrapLongLines={wrapLines}

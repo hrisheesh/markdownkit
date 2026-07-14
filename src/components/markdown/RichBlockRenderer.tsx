@@ -3,7 +3,8 @@
 import React from "react";
 
 import { DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, isMarkdownFlowBlockType, type MarkdownFlowRenderPolicy } from "../../ai/protocol";
-import { validateMarkdownFlowBlock } from "../../ai/validation";
+import { normalizeMarkdownFlowBlock, validateMarkdownFlowBlock } from "../../ai/validation";
+import type { MarkdownFlowNormalizationMode } from "../../ai/model";
 import { validateMarkdownFlowArtifactBlock, type MarkdownFlowArtifactRegistry } from "../../ai/artifacts";
 import { emitMarkdownFlowTelemetry, type MarkdownFlowTelemetry } from "../../ai/telemetry";
 import type { MarkdownFlowDatasetResolver } from "../../ai/data";
@@ -22,7 +23,7 @@ const RichCodeBlock = React.lazy(() => import("./RichCodeBlock"));
 const RichMermaid = React.lazy(() => import("./RichMermaid"));
 
 function FeatureFallback({ label }: { label: string }) {
-  return <div role="status" className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">Loading {label}…</div>;
+  return <div role="status" aria-live="polite" className="rich-block-state my-6 flex items-center gap-3 px-4 py-3.5 text-sm"><span className="size-2 shrink-0 animate-pulse rounded-full bg-brand-blue" aria-hidden="true" />Loading {label}…</div>;
 }
 
 function LazyFeature({ label, children }: { label: string; children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export interface RichBlockRendererProps {
   artifactRegistry?: MarkdownFlowArtifactRegistry;
   datasetResolver?: MarkdownFlowDatasetResolver;
   telemetry?: MarkdownFlowTelemetry;
+  validationMode?: MarkdownFlowNormalizationMode;
   containsTooManyAiBlocks?: boolean;
 }
 
@@ -55,8 +57,12 @@ function hasDatasetReference(code: string): boolean {
 }
 
 /** Canonical dispatch pipeline for every rich fenced block. */
-export default function RichBlockRenderer({ language, code, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, telemetry, containsTooManyAiBlocks }: RichBlockRendererProps) {
-  const isStrictAiBlock = Boolean(renderPolicy && isMarkdownFlowBlockType(language));
+export default function RichBlockRenderer({ language, code, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, telemetry, validationMode, containsTooManyAiBlocks }: RichBlockRendererProps) {
+  const normalization = { normalization: validationMode } as const;
+  const normalizedBlock = renderPolicy ? normalizeMarkdownFlowBlock(language, code, normalization) : undefined;
+  const activeLanguage = normalizedBlock?.language ?? language;
+  const activeCode = normalizedBlock?.code ?? code;
+  const isStrictAiBlock = Boolean(renderPolicy && isMarkdownFlowBlockType(activeLanguage));
   if (language === "artifact" && (artifactRegistry || renderPolicy)) {
     if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
     const validation = validateMarkdownFlowArtifactBlock(code, artifactRegistry, renderPolicy);
@@ -66,22 +72,22 @@ export default function RichBlockRenderer({ language, code, blockRenderers, rend
     }
     return <RichArtifactBlock artifact={validation.artifact} telemetry={telemetry} />;
   }
-  if (renderPolicy && isMarkdownFlowBlockType(language)) {
+  if (renderPolicy && isMarkdownFlowBlockType(activeLanguage)) {
     if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
-    const validation = validateMarkdownFlowBlock(language, code, renderPolicy);
+    const validation = validateMarkdownFlowBlock(activeLanguage, activeCode, renderPolicy, normalization);
     if (!validation.valid) return <RichBlockValidationError reason={validation.reason} blockType={language} telemetry={telemetry} />;
   }
-  const blockRenderer = blockRenderers?.[language];
-  if (blockRenderer) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} />{blockRenderer({ language, code })}</>;
-  if (language === "mermaid") return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="diagram"><RichMermaid chart={code} /></LazyFeature></>;
-  if (language === "chart") {
-    if (hasDatasetReference(code)) {
+  const blockRenderer = blockRenderers?.[activeLanguage];
+  if (blockRenderer) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} />{blockRenderer({ language: activeLanguage, code: activeCode })}</>;
+  if (activeLanguage === "mermaid") return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="diagram"><RichMermaid chart={activeCode} /></LazyFeature></>;
+  if (activeLanguage === "chart") {
+    if (hasDatasetReference(activeCode)) {
       if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require a render policy." blockType="chart" telemetry={telemetry} />;
-      return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="chart"><RichDatasetChart configStr={code} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></LazyFeature></>;
+      return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="chart"><RichDatasetChart configStr={activeCode} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></LazyFeature></>;
     }
-    return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><LazyFeature label="chart"><RichChart configStr={code} /></LazyFeature></>;
+    return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="chart"><RichChart configStr={activeCode} /></LazyFeature></>;
   }
-  if (["embed", "image", "map"].includes(language)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichMediaBlock type={language as "embed" | "image" | "map"} configStr={code} /></>;
-  if (["callout", "metrics", "timeline", "steps", "comparison", "accordion", "tabs", "cards", "filetree", "progress", "checklist", "status", "quote"].includes(language)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={language} telemetry={telemetry} /><RichStructuredBlock type={language as "callout" | "metrics" | "timeline" | "steps" | "comparison" | "accordion" | "tabs" | "cards" | "filetree" | "progress" | "checklist" | "status" | "quote"} configStr={code} /></>;
-  return <LazyFeature label="code highlighter"><RichCodeBlock language={language} code={code} /></LazyFeature>;
+  if (["embed", "image", "map"].includes(activeLanguage)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><RichMediaBlock type={activeLanguage as "embed" | "image" | "map"} configStr={activeCode} /></>;
+  if (["callout", "metrics", "timeline", "steps", "comparison", "accordion", "tabs", "cards", "filetree", "progress", "checklist", "status", "quote"].includes(activeLanguage)) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><RichStructuredBlock type={activeLanguage as "callout" | "metrics" | "timeline" | "steps" | "comparison" | "accordion" | "tabs" | "cards" | "filetree" | "progress" | "checklist" | "status" | "quote"} configStr={activeCode} /></>;
+  return <LazyFeature label="code highlighter"><RichCodeBlock language={activeLanguage} code={activeCode} /></LazyFeature>;
 }

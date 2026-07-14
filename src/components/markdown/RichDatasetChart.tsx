@@ -31,9 +31,9 @@ function DataState({ status, onRefresh }: { status: "loading" | "unavailable" | 
         ? "Data is unavailable."
         : "Approved data could not be loaded.";
   return (
-    <div role={status === "loading" ? "status" : "alert"} className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">
-      {message}
-      {status !== "loading" && <button type="button" onClick={onRefresh} className="ml-3 font-medium text-[#007aff] underline underline-offset-2">Retry</button>}
+    <div role={status === "loading" ? "status" : "alert"} aria-live="polite" className="rich-block-state my-6 flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3.5 text-sm leading-6 sm:px-5">
+      <span className="inline-flex items-center gap-2.5">{status === "loading" && <span className="size-2 animate-pulse rounded-full bg-brand-blue shadow-[0_0_0_4px_rgba(79,99,217,0.08)]" aria-hidden="true" />}{message}</span>
+      {status === "unavailable" || status === "error" ? <button type="button" onClick={onRefresh} className="rich-block-control px-2.5 text-xs font-semibold text-brand-blue">Retry</button> : null}
     </div>
   );
 }

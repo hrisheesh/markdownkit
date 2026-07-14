@@ -1,8 +1,19 @@
 @import "katex/dist/katex.min.css";
 
 .markdown-render .katex-display {
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.75rem 0 0.5rem;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(21 23 25 / 7%);
+  border-radius: 0.95rem;
+  background: linear-gradient(145deg, rgb(255 255 255 / 96%), rgb(248 248 247 / 92%));
+  box-shadow: 0 8px 24px -24px rgb(18 20 22 / 42%);
+  text-align: center;
+}
+
+@media (max-width: 639px) {
+  .markdown-render .katex-display { padding-inline: 0.875rem; }
 }

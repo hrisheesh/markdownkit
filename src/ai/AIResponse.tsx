@@ -13,8 +13,10 @@ import {
 } from "./artifacts";
 import { getAIResponsePresetPolicy, type AIResponsePreset } from "./presets";
 import type { MarkdownFlowCitation, MarkdownFlowRenderPolicy } from "./protocol";
+import { toMarkdownFlowSource, type MarkdownFlowSourceInput } from "./citations";
 import {
   StreamingRichMarkdown,
+  useControlledMarkdownFlowStream,
   useMarkdownFlowStream,
   type MarkdownFlowStreamController,
   type StreamingRichMarkdownProps,
@@ -35,15 +37,15 @@ export type AIResponseComponents = Readonly<Record<string, AIResponseComponent |
 
 export interface UseAIResponseOptions extends Omit<UseMarkdownFlowStreamOptions, "citations"> {
   /** Source metadata displayed for citations in the answer. */
-  sources?: readonly MarkdownFlowCitation[];
+  sources?: readonly MarkdownFlowSourceInput[];
   /** Compatibility alias for sources. */
-  citations?: readonly MarkdownFlowCitation[];
+  citations?: readonly MarkdownFlowSourceInput[];
 }
 
 /** A concise alias for the provider-neutral streaming controller. */
 export function useAIResponse(initialContent = "", options: UseAIResponseOptions = {}): MarkdownFlowStreamController {
   const { sources, citations, ...streamOptions } = options;
-  return useMarkdownFlowStream(initialContent, { ...streamOptions, citations: sources ?? citations });
+  return useMarkdownFlowStream(initialContent, { ...streamOptions, citations: toDisplayCitations(sources ?? citations) });
 }
 
 export interface AIResponseProps extends Omit<StreamingRichMarkdownProps, "citations" | "artifactRegistry" | "renderPolicy" | "components"> {
@@ -52,9 +54,9 @@ export interface AIResponseProps extends Omit<StreamingRichMarkdownProps, "citat
   /** A controller returned by useAIResponse or useMarkdownFlowStream. */
   stream?: MarkdownFlowStreamController | StreamingRichMarkdownProps["stream"];
   /** Source metadata rendered as inline citation badges. */
-  sources?: readonly MarkdownFlowCitation[];
+  sources?: readonly MarkdownFlowSourceInput[];
   /** Compatibility alias for sources. */
-  citations?: readonly MarkdownFlowCitation[];
+  citations?: readonly MarkdownFlowSourceInput[];
   /** A conservative capability set for common answer types. Defaults to chat. */
   preset?: AIResponsePreset;
   /** Additional or replacement render-policy settings for this response. */
@@ -102,6 +104,19 @@ function componentDefinitions(components?: AIResponseComponents): MarkdownFlowAr
   });
 }
 
+function toDisplayCitations(sources?: readonly MarkdownFlowSourceInput[]): readonly MarkdownFlowCitation[] | undefined {
+  return sources?.map((input) => {
+    const source = toMarkdownFlowSource(input);
+    return {
+      id: source.id,
+      chunk_id: "markdown-flow-source",
+      document_id: source.id,
+      filename: source.title ?? source.id,
+      text_preview: source.preview ?? source.title ?? source.id,
+    };
+  });
+}
+
 function mergePolicy(
   preset: AIResponsePreset,
   policy: MarkdownFlowRenderPolicy | undefined,
@@ -146,11 +161,20 @@ export function AIResponse({
     () => mergePolicy(preset, policy ?? renderPolicy, definitions),
     [definitions, policy, preset, renderPolicy],
   );
+  const displayCitations = React.useMemo(() => toDisplayCitations(sources ?? citations), [citations, sources]);
+  const controlledStream = useControlledMarkdownFlowStream(props.content ?? "", {
+    status: props.status,
+    error: props.error,
+    citations: displayCitations,
+    normalization: props.validationMode,
+  });
+  const activeStream = props.stream ?? (props.content === undefined ? undefined : controlledStream);
 
   return (
     <StreamingRichMarkdown
       {...props}
-      citations={sources ?? citations}
+      stream={activeStream}
+      citations={displayCitations}
       renderPolicy={activePolicy}
       artifactRegistry={registry}
       components={markdownComponents as RichMarkdownProps["components"]}

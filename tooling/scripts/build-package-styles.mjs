@@ -12,14 +12,14 @@ await mkdir(path.join(root, "dist"), { recursive: true });
 await cp(path.join(katexRoot, "dist/fonts"), path.join(root, "dist/fonts"), { recursive: true });
 
 for (const [input, output, includeKatexFonts] of [
-  ["src/styles/package.css", "dist/styles.css", false],
+  ["src/styles/package.css", "dist/styles.css", true],
   ["src/styles/math.css", "dist/math.css", true],
   ["src/styles/core.css", "dist/core.css", false],
 ]) {
   const source = path.join(root, input);
   const destination = path.join(root, output);
   const css = await readFile(source, "utf8");
-  const result = await postcss([tailwindcss()]).process(css, { from: source, to: destination });
+  const result = await postcss([tailwindcss({ optimize: true })]).process(css, { from: source, to: destination });
   await writeFile(
     destination,
     includeKatexFonts ? result.css.replaceAll("../../node_modules/katex/dist/fonts/", "./fonts/") : result.css,

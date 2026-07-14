@@ -1,5 +1,5 @@
 import { MARKDOWN_FLOW_PROTOCOL, type MarkdownFlowCitation, type MarkdownFlowDataset, type MarkdownFlowResponse, type MarkdownFlowStreamEvent } from "./protocol";
-import { joinMarkdownFlowNodes, MarkdownFlowNodeParser, type MarkdownFlowNode } from "./model";
+import { joinMarkdownFlowNodes, MarkdownFlowNodeParser, type MarkdownFlowNode, type MarkdownFlowNormalizationOptions } from "./model";
 
 export type MarkdownFlowStreamStatus = "streaming" | "complete" | "error" | "cancelled";
 
@@ -31,8 +31,8 @@ export class MarkdownFlowStreamParser extends MarkdownFlowNodeParser {
   }
 }
 
-export function createMarkdownFlowStream(initialContent = ""): MarkdownFlowStreamParser {
-  const parser = new MarkdownFlowStreamParser();
+export function createMarkdownFlowStream(initialContent = "", options: MarkdownFlowNormalizationOptions = {}): MarkdownFlowStreamParser {
+  const parser = new MarkdownFlowStreamParser(options);
   parser.append(initialContent);
   return parser;
 }

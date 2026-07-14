@@ -8,8 +8,9 @@ export default function RichBlockValidationError({ reason, blockType = "unknown"
   }, [blockType, reason, telemetry]);
 
   return (
-    <div role="alert" className="my-8 border-y border-black/[0.08] bg-[#fbfbfd] px-5 py-4 text-sm text-[#6e6e73]">
-      This AI block could not be rendered safely. {reason}
+    <div role="alert" className="rich-block-state my-6 px-4 py-3.5 text-sm leading-6 sm:px-5">
+      This AI block could not be rendered safely.
+      {process.env.NODE_ENV !== "production" && <span> {reason}</span>}
     </div>
   );
 }

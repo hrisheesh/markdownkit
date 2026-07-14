@@ -4,14 +4,36 @@ export { AIResponse, useAIResponse } from "./AIResponse";
 export type { AIResponseComponent, AIResponseComponents, AIResponseProps, UseAIResponseOptions } from "./AIResponse";
 export { AI_RESPONSE_PRESET_POLICIES, AI_RESPONSE_PRESETS, getAIResponsePresetPolicy } from "./presets";
 export type { AIResponsePreset } from "./presets";
+export {
+  createMarkdownFlowBlockInstructions,
+  getMarkdownFlowBlockDefinition,
+  MARKDOWN_FLOW_BLOCK_INSTRUCTIONS,
+  MARKDOWN_FLOW_BLOCK_REGISTRY,
+  MARKDOWN_FLOW_BLOCK_TYPES,
+} from "./blockRegistry";
+export type { MarkdownFlowBlockDefinition } from "./blockRegistry";
 export { applyMarkdownFlowResponse, applyMarkdownFlowStreamEvent, createMarkdownFlowStream, MarkdownFlowStreamParser } from "./stream";
 export type { MarkdownFlowStreamDiagnostics, MarkdownFlowStreamSegment, MarkdownFlowStreamSnapshot, MarkdownFlowStreamStatus } from "./stream";
 export { AIResponseInspector } from "./AIResponseInspector";
 export type { AIResponseInspectorProps } from "./AIResponseInspector";
 export { MarkdownFlowNodeParser, isMarkdownFlowStructuredLanguage, joinMarkdownFlowNodes, normalizeMarkdownFlowContent } from "./model";
 export type { MarkdownFlowBlockError, MarkdownFlowBlockErrorCode, MarkdownFlowBlockLifecycle, MarkdownFlowNode, MarkdownFlowStructuredLanguage } from "./model";
-export { extractMarkdownFlowCitationIds, tokenizeMarkdownFlowCitations, MARKDOWN_FLOW_CITATION_TOKEN } from "./citations";
-export type { MarkdownFlowCitationTextToken } from "./citations";
+export {
+  createMarkdownFlowCitationGuidance,
+  createMarkdownFlowSourceCitationGuidance,
+  diagnoseMarkdownFlowCitations,
+  extractMarkdownFlowCitationIds,
+  MARKDOWN_FLOW_CITATION_TOKEN,
+  toMarkdownFlowSource,
+  tokenizeMarkdownFlowCitations,
+} from "./citations";
+export type {
+  MarkdownFlowCitationDiagnostic,
+  MarkdownFlowCitationTextToken,
+  MarkdownFlowLegacyCitationSource,
+  MarkdownFlowSource,
+  MarkdownFlowSourceInput,
+} from "./citations";
 export {
   DEFAULT_MARKDOWN_FLOW_RENDER_POLICY,
   isMarkdownFlowBlockType,
@@ -53,13 +75,15 @@ export type {
 } from "./artifacts";
 export { MarkdownFlowArtifactState } from "../components/markdown/RichArtifactBlock";
 export type { MarkdownFlowArtifactStateProps } from "../components/markdown/RichArtifactBlock";
-export { validateMarkdownFlowBlock } from "./validation";
-export type { MarkdownFlowBlockValidationResult } from "./validation";
+export { normalizeMarkdownFlowBlock, validateMarkdownFlowBlock } from "./validation";
+export type { MarkdownFlowNormalizedBlock, MarkdownFlowBlockValidationResult } from "./validation";
 export { emitMarkdownFlowTelemetry } from "./telemetry";
 export type { MarkdownFlowTelemetry, MarkdownFlowTelemetryContext, MarkdownFlowTelemetryEvent } from "./telemetry";
 export {
   createMarkdownFlowInstructions,
+  createMarkdownFlow,
   createMarkdownFlowResponseTool,
+  MARKDOWN_FLOW_CITATION_FORMAT,
   markdownFlowResponseSchema,
   markdownFlowResponseTool,
   normalizeAnthropicStream,
@@ -74,7 +98,10 @@ export {
 } from "./integration";
 export type {
   MarkdownFlowDatasetInstruction,
+  CreateMarkdownFlowOptions,
+  MarkdownFlowConfiguration,
   MarkdownFlowInstructionsOptions,
   MarkdownFlowJsonSchema,
   MarkdownFlowToolDefinition,
+  MarkdownFlowValidationMode,
 } from "./integration";

@@ -23,12 +23,17 @@
 /dist
 *.tgz
 
+# Local duplicate copies
+* 2.md
+* 2.css
+
 # misc
 .DS_Store
 *.pem
 plan.md
 MakingLLMReady.md
 MovingTo0.2.0.md
+nextUpdates.md
 
 # debug
 npm-debug.log*

@@ -14,8 +14,8 @@ describe("validateMarkdownFlowBlock", () => {
   it("enforces block, row, chart and external URL limits", () => {
     expect(validateMarkdownFlowBlock("callout", JSON.stringify({ title: "x".repeat(30) }), { maxBlockCharacters: 10 })).toMatchObject({ valid: false, reason: expect.stringContaining("size") });
     expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "bar", data: [{ x: 1 }, { x: 2 }], x: "x", y: "x" }), { maxChartDataPoints: 1 })).toMatchObject({ valid: false });
-    expect(validateMarkdownFlowBlock("embed", JSON.stringify({ url: "https://example.com" }))).toMatchObject({ valid: false, reason: expect.stringContaining("disabled") });
-    expect(validateMarkdownFlowBlock("embed", JSON.stringify({ url: "https://example.com" }), { allowExternalUrls: true })).toEqual({ valid: true });
+    expect(validateMarkdownFlowBlock("embed", JSON.stringify({ url: "https://example.com" }))).toEqual({ valid: true });
+    expect(validateMarkdownFlowBlock("embed", JSON.stringify({ url: "https://example.com" }), { allowExternalUrls: false })).toMatchObject({ valid: false, reason: expect.stringContaining("disabled") });
   });
 
   it("validates structured config shapes and dataset chart allowlists", () => {
@@ -24,5 +24,35 @@ describe("validateMarkdownFlowBlock", () => {
     const datasetChart = JSON.stringify({ type: "line", dataset: "sales", x: "month", y: "revenue" });
     expect(validateMarkdownFlowBlock("chart", datasetChart, { allowedDatasetIds: ["sales"], allowedDatasetFields: { sales: ["month", "revenue"] } })).toEqual({ valid: true });
     expect(validateMarkdownFlowBlock("chart", datasetChart, { allowedDatasetIds: ["sales"], allowedDatasetFields: { sales: ["month"] } })).toMatchObject({ valid: false, reason: expect.stringContaining("outside") });
+  });
+
+  it("requires every dataset chart series to be approved and keeps inline data separate", () => {
+    const datasetChart = JSON.stringify({ type: "composed", dataset: "sales", x: "month", y: "revenue", bars: ["revenue"], lines: ["target"], areas: ["forecast"] });
+    const policy = { allowedDatasetIds: ["sales"], allowedDatasetFields: { sales: ["month", "revenue", "target", "forecast"] } };
+
+    expect(validateMarkdownFlowBlock("chart", datasetChart, policy)).toEqual({ valid: true });
+    expect(validateMarkdownFlowBlock("chart", datasetChart, {
+      ...policy,
+      allowedDatasetFields: { sales: ["month", "revenue", "target"] },
+    })).toMatchObject({ valid: false, reason: expect.stringContaining("outside") });
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "bar", dataset: "sales", data: [{ month: "Jan", revenue: 4 }], x: "month", y: "revenue" }), policy)).toMatchObject({
+      valid: false,
+      reason: expect.stringContaining("inline data or a dataset"),
+    });
+  });
+
+  it("rejects inline charts with missing or non-numeric resolved fields", () => {
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "bar", data: [{ month: "Jan", revenue: 4 }], x: "month", y: "value" }))).toMatchObject({
+      valid: false,
+      reason: expect.stringContaining('"value" is missing'),
+    });
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "line", data: [{ month: "Jan", revenue: "4" }], x: "month", y: "revenue" }))).toMatchObject({
+      valid: false,
+      reason: expect.stringContaining('"revenue" must contain finite numeric'),
+    });
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "scatter", data: [{ x: 1, y: 2 }] }))).toMatchObject({
+      valid: false,
+      reason: expect.stringContaining("require both"),
+    });
   });
 });

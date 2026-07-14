@@ -7,11 +7,13 @@ import { promisify } from "node:util";
 const root = process.cwd();
 const budgets = {
   "dist/index.mjs": 90 * 1024,
-  "dist/index.js": 110 * 1024,
+  // 0.2.4 adds the generated AI contract, source diagnostics, and controlled
+  // streaming adapter to the public runtime.
+  "dist/index.js": 120 * 1024,
   "dist/core.mjs": 16 * 1024,
   "dist/core.js": 20 * 1024,
-  "dist/ai/index.mjs": 40 * 1024,
-  "dist/ai/index.js": 143 * 1024,
+  "dist/ai/index.mjs": 48 * 1024,
+  "dist/ai/index.js": 172 * 1024,
   "dist/styles.css": 90 * 1024,
   "dist/math.css": 30 * 1024,
   "dist/core.css": 60 * 1024,
