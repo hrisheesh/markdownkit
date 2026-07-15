@@ -19,7 +19,8 @@ describe("validateMarkdownFlowBlock", () => {
   });
 
   it("validates structured config shapes and dataset chart allowlists", () => {
-    expect(validateMarkdownFlowBlock("callout", JSON.stringify({ title: "Safe", script: "nope" }))).toMatchObject({ valid: false });
+    expect(validateMarkdownFlowBlock("callout", JSON.stringify({ title: "Safe", script: "nope" }))).toEqual({ valid: true });
+    expect(validateMarkdownFlowBlock("callout", JSON.stringify({ title: "Safe", script: "nope" }), undefined, { normalization: "strict" })).toMatchObject({ valid: false });
     expect(validateMarkdownFlowBlock("metrics", JSON.stringify({ metrics: [{ label: "Revenue", value: 4 }] }))).toEqual({ valid: true });
     const datasetChart = JSON.stringify({ type: "line", dataset: "sales", x: "month", y: "revenue" });
     expect(validateMarkdownFlowBlock("chart", datasetChart, { allowedDatasetIds: ["sales"], allowedDatasetFields: { sales: ["month", "revenue"] } })).toEqual({ valid: true });
@@ -46,11 +47,12 @@ describe("validateMarkdownFlowBlock", () => {
       valid: false,
       reason: expect.stringContaining('"value" is missing'),
     });
-    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "line", data: [{ month: "Jan", revenue: "4" }], x: "month", y: "revenue" }))).toMatchObject({
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "line", data: [{ month: "Jan", revenue: "not-a-number" }], x: "month", y: "revenue" }))).toMatchObject({
       valid: false,
       reason: expect.stringContaining('"revenue" must contain finite numeric'),
     });
-    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "scatter", data: [{ x: 1, y: 2 }] }))).toMatchObject({
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "scatter", data: [{ x: 1, y: 2 }] }))).toEqual({ valid: true });
+    expect(validateMarkdownFlowBlock("chart", JSON.stringify({ type: "scatter", data: [{ x: 1, y: 2 }] }), undefined, { normalization: "strict" })).toMatchObject({
       valid: false,
       reason: expect.stringContaining("require both"),
     });

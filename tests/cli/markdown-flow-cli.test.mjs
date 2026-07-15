@@ -15,6 +15,7 @@ const api = {
       "Markdown Flow contract: markdown-flow/v1.",
       `Allowed block types: ${allowedBlocks.join(", ") || "none"}.`,
       "Each rich block must use strict JSON.",
+      "Never emit an empty or placeholder rich block.",
       "Never invent sources or data. Cite using [cite:source-id].",
     ].join("\n");
   },

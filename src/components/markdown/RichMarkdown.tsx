@@ -154,9 +154,8 @@ export interface RichMarkdownContentProps extends Omit<RichMarkdownProps, "enabl
 export function RichMarkdownContent({ content, citations, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, citationResolver, telemetry, components, mathPlugins, validationMode }: RichMarkdownContentProps) {
   const citationIds = React.useMemo(() => extractMarkdownFlowCitationIds(content), [content]);
   const resolvedCitations = useMarkdownFlowCitations(citationIds, citations, citationResolver, telemetry);
-  const containsTooManyAiBlocks = renderPolicy
-    && (content.match(/^```(?:callout|metrics|timeline|steps|comparison|accordion|tabs|cards|filetree|progress|checklist|status|quote|chart|mermaid|embed|image|map|artifact)\s*$/gm)?.length ?? 0)
-      > (renderPolicy.maxBlocks ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxBlocks);
+  const containsTooManyAiBlocks = (content.match(/^```(?:callout|metrics|timeline|steps|comparison|accordion|tabs|cards|filetree|progress|checklist|status|quote|chart|mermaid|embed|image|map|artifact)\b/gim)?.length ?? 0)
+    > (renderPolicy?.maxBlocks ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxBlocks);
 
   React.useEffect(() => {
     const blockCount = content.match(/^```[\w-]+\s*$/gm)?.length ?? 0;

@@ -42,7 +42,18 @@ For normal applications, import the complete CSS once at the application shell:
 import "markdown-flow/styles.css";
 ```
 
-The stylesheet includes local responsive overflow for wide tables, code, file trees, Mermaid, charts, and media. Do not add a broad parent `overflow-x-auto` simply to make Markdown Flow work.
+This is the same complete stylesheet used by the playground: it includes every rich-block surface, spacing rule, responsive layout, local overflow rule, and KaTeX style. No playground CSS, `.chat-markdown` overrides, copied selectors, or parent card styles are required. Do not add a broad parent `overflow-x-auto` simply to make Markdown Flow work.
+
+The smallest AI integration is two imports and one component:
+
+```tsx
+import "markdown-flow/styles.css";
+import { AIResponse } from "markdown-flow/ai";
+
+export function Answer({ answer }: { answer: string }) {
+  return <AIResponse content={answer} />;
+}
+```
 
 ## Render Markdown in React
 
@@ -145,14 +156,22 @@ npx markdown-flow verify-prompt --preset rag --input ../backend/prompts/markdown
 npx markdown-flow doctor
 ```
 
-Read the generated text from your backend at runtime:
+Read the generated text from a stable application root and fail loudly if deployment omitted it. Do not silently replace a missing prompt with an empty string:
 
 ```python
+import os
 from pathlib import Path
 
-markdown_flow = Path("prompts/markdown-flow.txt").read_text()
+app_root = Path(os.environ.get("APP_ROOT", Path.cwd())).resolve()
+prompt_path = app_root / "prompts" / "markdown-flow.txt"
+if not prompt_path.is_file():
+    raise RuntimeError(f"Markdown Flow prompt not found: {prompt_path}")
+
+markdown_flow = prompt_path.read_text(encoding="utf-8")
 system_prompt = f"{markdown_flow}\n\n{application_instructions}"
 ```
+
+Set `APP_ROOT` to your deployed backend root, or replace `app_root` with a framework-provided project root. Avoid a fixed chain of `dirname()` or `.parent` calls based on the current module depth; moving the loader will silently point it at a different folder unless you explicitly raise on a missing file.
 
 Run `verify-prompt` in CI after changing a preset or upgrading Markdown Flow. Run `doctor` when diagnosing a package/CLI installation. Regenerate committed artifacts whenever the package version or contract configuration changes.
 
@@ -369,11 +388,14 @@ The default validation mode is `normalize`. It recovers documented, unambiguous 
 
 - case-normalized block language and `mermaidjs` / `mermaid-js`;
 - same-line JSON or Mermaid fence bodies;
-- `milestones`, `steps`, `services`, or `tasks` for `items` in item blocks;
-- `entries` for file-tree `files`, quote `text` or `content` for `body`, item `content` for `description`, and checklist `completed` for `checked`;
-- chart `xAxis` / `yAxis` for `x` / `y`.
+- JSON5-style single quotes, comments, and trailing commas;
+- a top-level item array or an object nested under `config`, `props`, or `payload`;
+- common container aliases such as `milestones`, `steps`, `services`, `tasks`, `sections`, `panels`, `entries`, and `nodes`;
+- common item aliases such as `heading`, `label`, `name`, or `text` for titles and `completed` for `checked`;
+- chart `xAxis` / `yAxis`, `labels` / `categories`, and Chart.js- or Apex-style `datasets` / `series`;
+- media aliases such as `href`, `link`, or `src` for `url`.
 
-It intentionally does not guess at foreign chart formats such as `series`. Charts are row-oriented and need fields named by `x`, `y`, `keys`, `lines`, `bars`, or `areas`.
+Normalization keeps only fields supported by the selected block and produces a canonical internal configuration before validation. Unknown fields are ignored in normalize mode; strict mode rejects aliases, JSON5 syntax, wrappers, and extra fields. Validation still enforces size limits, safe `http:`/`https:` media URLs, finite chart values, explicit dataset authorization, and any policy you pass.
 
 Require exact output where your model contract needs it:
 
@@ -387,7 +409,9 @@ Low-level `normalizeMarkdownFlowBlock`, `validateMarkdownFlowBlock`, and `Markdo
 
 ## All built-in blocks
 
-Put a block in a fenced code block whose language is its block type. All rich blocks except Mermaid require one JSON object with double-quoted keys and strings; do not use comments, trailing commas, JSON5, HTML, CSS, or JavaScript.
+Put a block in a fenced code block whose language is its block type. Generated prompts request strict JSON because it is the most portable model contract. The default renderer can recover the common JSON5 and schema variations listed above; strict mode requires one exact JSON object with double-quoted keys and strings. HTML, CSS, JavaScript, JSX, and executable content are never accepted.
+
+Do not generate empty demonstration blocks. Arrays such as `items`, `tabs`, `cards`, `files`, `metrics`, `rows`, `images`, and `locations` should contain meaningful entries; use ordinary Markdown when structured data is unavailable. If an upstream model nevertheless sends a valid empty collection, Markdown Flow renders a quiet empty state instead of an error.
 
 ````md
 ```callout
@@ -446,7 +470,7 @@ For a dataset chart, omit `data`, set `dataset`, and name the requested fields i
 
 ## Styling, diagnostics, and telemetry
 
-`styles.css` is the easy path and includes KaTeX. Use `core.css` plus `math.css` only when you own the split import decision. Load CSS once, not in every response component.
+`styles.css` is the self-contained easy path and includes all rich-block and KaTeX styling. Use `core.css` plus `math.css` only when you intentionally want the split boundary. Load CSS once, not in every response component, and never copy styles from the playground.
 
 Turn on the local development inspector while integrating:
 
@@ -454,7 +478,7 @@ Turn on the local development inspector while integrating:
 <AIResponse content={content} debug />
 ```
 
-In non-production builds it shows requested, normalized, validated, rendered, and rejected blocks plus stream and citation diagnostics. It does not render in production and does not send telemetry. Production users get neutral fallbacks such as “This part of the response could not be displayed,” not parser jargon. Diagnostics can include response content, so do not expose them to end users.
+In non-production builds it shows requested, normalized, validated, rendered, and rejected blocks plus stream and citation diagnostics. It does not render in production and does not send telemetry. When a malformed block cannot become its intended component, production renders safely extracted readable text—or escaped raw text when no structure can be recovered—instead of a dead-end validation error. Policy-denied content remains hidden. Diagnostics can include response content, so do not expose them to end users.
 
 For privacy-safe production observability, pass a `telemetry` handler. Stream and resolver events are available; stream diagnostics contain counts and timestamps, not provider payloads. Do not add raw response text to telemetry.
 
@@ -554,7 +578,7 @@ Both `text-delta` / `textDelta` and finish events are supported. Tool parts are 
 
 ## Migration, troubleshooting, and release notes
 
-### Release 0.2.4
+### Release 0.2.5
 
 - Existing `RichMarkdown`, `StreamingRichMarkdown`, `useMarkdownFlowStream`, and `useAIResponse` integrations remain supported.
 - Replace duplicated prompt allowlists with `createMarkdownFlowInstructions({ preset, sources })` or `createMarkdownFlow({ preset, sources })`.
@@ -564,13 +588,16 @@ Both `text-delta` / `textDelta` and finish events are supported. Tool parts are 
 - Rich blocks and external `http:`/`https:` media are enabled by default. To keep a closed surface, pass an explicit `renderPolicy` with the block allowlist and `allowExternalUrls: false`.
 - Streaming responses preserve visual continuity when a generation completes, restarts, or receives delayed provider events.
 - The stylesheet and components have a calm, rounded visual refresh; no public component migration is required.
+- Known rich blocks normalize common model variations even when no policy is supplied, including JSON5, wrappers, aliases, and popular chart-series shapes.
+- Empty or malformed blocks now degrade to neutral empty or readable plain-content states while explicit policy denials remain concealed.
+- The playground no longer carries private rich-block overrides; the published `styles.css` is the complete visual implementation.
 
 ### Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| A rich block falls back instead of rendering. | Enable `debug`; verify the fence closes, JSON is strict, type is in `allowedBlocks`, and every field matches the block reference. |
-| A chart complains about a field or `series`. | Use row objects and `x`/`y` or `keys`; do not send a foreign `series` schema. Every numeric series field must exist and be finite. |
+| A rich block falls back instead of rendering. | Enable `debug`; first check that the fence closes and contains meaningful data. Normalize mode recovers common aliases and JSON5; strict mode requires the exact reference schema. |
+| A chart falls back. | Row-oriented data and common `labels`/`categories` plus `datasets`/`series` inputs are supported. Confirm every series has the same number of values and every numeric value is finite. |
 | A chart dataset is denied/unavailable. | Confirm dataset ID and requested fields are policy-allowed, then confirm the resolver authorizes and returns matching schema/data. |
 | Citations do not appear. | Pass `sources`/`citations`, use `[cite:bare-id]`, and make sure the bare ID matches exactly. |
 | A partial block displays as incomplete. | Send the closing fence before `complete`; this is intentional protection against partial JSON/Mermaid. |

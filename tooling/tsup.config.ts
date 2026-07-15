@@ -10,7 +10,7 @@ export default defineConfig({
   },
   format: ["esm", "cjs"],
   sourcemap: true,
-  external: ["react", "react-dom"],
+  external: ["react", "react-dom", "json5"],
   minify: false,
   target: "es2018",
   treeshake: true,

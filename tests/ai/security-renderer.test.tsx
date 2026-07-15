@@ -15,4 +15,20 @@ describe("renderer trust boundary", () => {
     expect(container.innerHTML).not.toContain("window.pwned");
     expect(container.querySelector('a[href^="javascript:"]')).toBeNull();
   });
+
+  it("normalizes known rich blocks without requiring a render policy", () => {
+    const { container } = render(<RichMarkdown content={"```cards\n[{ heading: 'Launch', text: 'Ready', }]\n```"} />);
+    expect(container.textContent).toContain("Launch");
+    expect(container.textContent).toContain("Ready");
+    expect(container.textContent).not.toContain("valid JSON configuration");
+  });
+
+  it("renders empty and malformed blocks as readable neutral fallbacks", () => {
+    const empty = render(<RichMarkdown content={'```tabs\n{"title":"Details","tabs":[]}\n```'} />);
+    expect(empty.container.textContent).toContain("No items were provided");
+
+    const malformed = render(<RichMarkdown content={'```cards\n{"cards":[{"title":"Launch","description":"Ready"}]\n```'} />);
+    expect(malformed.container.textContent).toContain("Rendered as plain content");
+    expect(malformed.container.textContent).toContain("Launch");
+  });
 });

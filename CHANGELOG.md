@@ -4,6 +4,33 @@ All notable changes to Markdown Flow are documented here. Markdown Flow follows 
 
 For installation, usage, configuration, examples, migration guidance, and troubleshooting, see the [Ultimate User Guide](./README.md).
 
+## 0.2.5 — 2026-07-15
+
+### Flexible AI output
+
+- Rich blocks now normalize automatically with or without an explicit render policy, making the two-import `AIResponse` integration behave like the complete package experience by default.
+- Added tolerant recovery for JSON5 syntax, top-level arrays, `config` / `props` / `payload` wrappers, common field and container aliases, scalar coercion, and extra non-executable fields.
+- Added conversion for common Chart.js and Apex-style `labels`, `categories`, `datasets`, and `series` configurations while preserving exact strict-mode validation.
+- Valid bounded empty collections now render a neutral empty state. Invalid structures recover readable text or escaped source rather than ending at an opaque validation error.
+
+### Complete package styling
+
+- Made `markdown-flow/styles.css` the single source of truth for rich-block layout, spacing, responsive behavior, media, tabs, highlights, empty states, and fallbacks.
+- Removed the playground's duplicate rich-block overrides, ensuring examples and consumer applications use the same published stylesheet.
+- Added packaged-CSS regression assertions so missing public selectors fail release validation.
+
+### Safer prompts and integration guidance
+
+- Generated prompts now prohibit empty or placeholder rich blocks and direct models to ordinary Markdown whenever meaningful structured data is unavailable.
+- Prompt verification now detects a missing non-empty-block requirement.
+- Reworked backend prompt-loading guidance to use a stable application root and fail loudly when the generated prompt artifact is missing.
+- Preserved rejection of unsafe URL protocols, prototype-shaped keys, event-handler properties, policy-denied content, unauthorized datasets, and configured size limits.
+
+### Quality and compatibility
+
+- Added regression coverage for default normalization, JSON5, wrappers, aliases, common chart schemas, strict mode, empty states, readable fallbacks, CSS completeness, prompt generation, and security boundaries.
+- Kept feature-heavy chart, diagram, syntax-highlighting, and math renderers lazy; JSON5 remains an explicit runtime dependency instead of being duplicated into package bundles.
+
 ## 0.2.4 — 2026-07-15
 
 ### AI integration and rendering

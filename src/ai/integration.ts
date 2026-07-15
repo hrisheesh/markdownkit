@@ -110,6 +110,7 @@ export function createMarkdownFlowInstructions(options: MarkdownFlowInstructions
       ? "Each rich block must use strict JSON with double-quoted keys and strings; do not use JSON5, comments, trailing commas, HTML, CSS, JavaScript, React, or unapproved block types."
       : "Each rich block must contain a JSON object; do not emit HTML, CSS, JavaScript, React, or unapproved block types.",
     "Use the form ```block-type followed by its JSON configuration and a closing ``` fence. Keep prose in Markdown.",
+    "Never emit an empty or placeholder rich block. Arrays such as items, tabs, cards, files, metrics, rows, images, and locations must contain meaningful entries. If valid block data is unavailable, use ordinary Markdown instead.",
     `Never invent sources or data. Cite only supplied source IDs using the exact token ${MARKDOWN_FLOW_CITATION_FORMAT} in normal Markdown, and reference approved datasets instead of copying large datasets.`,
   ];
 

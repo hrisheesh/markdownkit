@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { aiStreamReplays } from "../fixtures/ai-stream-replays.mjs";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../..", import.meta.url));
+const packageCss = readFileSync(`${root}/dist/styles.css`, "utf8");
+for (const selector of [".markdown-render", ".rich-block-frame", ".rich-media-embed", ".rich-explore-tabs", ".rich-highlight-card", ".rich-block-fallback"]) {
+  assert.match(packageCss, new RegExp(selector.replace(".", "\\.")), `dist/styles.css is missing ${selector}`);
+}
 const { RichMarkdown } = require(root);
 const { validateMarkdownFlowBlock } = require(root);
 const {
@@ -141,6 +146,10 @@ assert.match(
 );
 assert.match(
   validateMarkdownFlowBlock("chart", "{ type: 'line' }", { allowedBlocks: ["chart"] }).reason,
+  /non-empty/,
+);
+assert.match(
+  validateMarkdownFlowBlock("chart", "{ type: 'line' }", { allowedBlocks: ["chart"] }, { normalization: "strict" }).reason,
   /valid JSON/,
 );
 assert.match(
@@ -152,7 +161,7 @@ const strictPolicyMarkup = render(RichMarkdown, {
   content: "```chart\n{ type: 'line' }\n```\n\n```callout\n{\"title\":\"Safe\",\"body\":\"Validated output.\"}\n```",
   renderPolicy: { allowedBlocks: ["chart", "callout"] },
 });
-assert.match(strictPolicyMarkup, /could not be rendered safely/);
+assert.match(strictPolicyMarkup, /Rendered as plain content/);
 assert.match(strictPolicyMarkup, /Validated output/);
 
 const streamParser = new MarkdownFlowStreamParser();

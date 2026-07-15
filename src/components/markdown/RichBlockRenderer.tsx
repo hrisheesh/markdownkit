@@ -59,10 +59,11 @@ function hasDatasetReference(code: string): boolean {
 /** Canonical dispatch pipeline for every rich fenced block. */
 export default function RichBlockRenderer({ language, code, blockRenderers, renderPolicy, artifactRegistry, datasetResolver, telemetry, validationMode, containsTooManyAiBlocks }: RichBlockRendererProps) {
   const normalization = { normalization: validationMode } as const;
-  const normalizedBlock = renderPolicy ? normalizeMarkdownFlowBlock(language, code, normalization) : undefined;
+  const normalizedBlock = normalizeMarkdownFlowBlock(language, code, normalization);
   const activeLanguage = normalizedBlock?.language ?? language;
   const activeCode = normalizedBlock?.code ?? code;
-  const isStrictAiBlock = Boolean(renderPolicy && isMarkdownFlowBlockType(activeLanguage));
+  const isAiBlock = isMarkdownFlowBlockType(activeLanguage);
+  const isStrictAiBlock = Boolean(renderPolicy && isAiBlock);
   if (language === "artifact" && (artifactRegistry || renderPolicy)) {
     if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
     const validation = validateMarkdownFlowArtifactBlock(code, artifactRegistry, renderPolicy);
@@ -72,17 +73,20 @@ export default function RichBlockRenderer({ language, code, blockRenderers, rend
     }
     return <RichArtifactBlock artifact={validation.artifact} telemetry={telemetry} />;
   }
-  if (renderPolicy && isMarkdownFlowBlockType(activeLanguage)) {
+  if (isAiBlock) {
     if (containsTooManyAiBlocks) return <RichBlockValidationError reason="This response exceeds the configured number of AI blocks." blockType={language} telemetry={telemetry} />;
-    const validation = validateMarkdownFlowBlock(activeLanguage, activeCode, renderPolicy, normalization);
-    if (!validation.valid) return <RichBlockValidationError reason={validation.reason} blockType={language} telemetry={telemetry} />;
+    const validation = validateMarkdownFlowBlock(activeLanguage, activeCode, renderPolicy ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY, normalization);
+    if (!validation.valid) {
+      const policyDenied = /disabled by this render policy|outside the approved|exceeds the configured|not permitted/i.test(validation.reason);
+      return <RichBlockValidationError reason={validation.reason} blockType={activeLanguage} code={policyDenied ? undefined : code} telemetry={telemetry} />;
+    }
   }
   const blockRenderer = blockRenderers?.[activeLanguage];
   if (blockRenderer) return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} />{blockRenderer({ language: activeLanguage, code: activeCode })}</>;
   if (activeLanguage === "mermaid") return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="diagram"><RichMermaid chart={activeCode} /></LazyFeature></>;
   if (activeLanguage === "chart") {
     if (hasDatasetReference(activeCode)) {
-      if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require a render policy." blockType="chart" telemetry={telemetry} />;
+      if (!renderPolicy) return <RichBlockValidationError reason="Dataset charts require an explicit render policy and dataset resolver." blockType="chart" telemetry={telemetry} />;
       return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="chart"><RichDatasetChart configStr={activeCode} resolver={datasetResolver} maxDataPoints={renderPolicy.maxChartDataPoints ?? DEFAULT_MARKDOWN_FLOW_RENDER_POLICY.maxChartDataPoints} telemetry={telemetry} /></LazyFeature></>;
     }
     return <><BlockAdherenceTelemetry active={isStrictAiBlock} blockType={activeLanguage} telemetry={telemetry} /><LazyFeature label="chart"><RichChart configStr={activeCode} /></LazyFeature></>;

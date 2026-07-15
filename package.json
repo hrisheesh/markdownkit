@@ -1,6 +1,6 @@
 {
   "name": "markdown-flow",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Polished Markdown and streaming AI response UI for React, Next.js, RAG, citations, charts, and trusted artifacts.",
   "license": "MIT",
   "keywords": [

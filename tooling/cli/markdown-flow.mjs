@@ -113,6 +113,7 @@ export function verifyPrompt(prompt, requirements) {
   if (!prompt.includes("strict JSON")) failures.push("missing strict JSON requirement");
   if (!prompt.includes("[cite:source-id]")) failures.push("missing citation-token requirement");
   if (!prompt.includes("Never invent sources or data.")) failures.push("missing source and data safety requirement");
+  if (!prompt.includes("Never emit an empty or placeholder rich block.")) failures.push("missing non-empty rich-block requirement");
   return failures;
 }
 

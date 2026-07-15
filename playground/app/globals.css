@@ -111,37 +111,6 @@ textarea::selection { background: rgb(79 99 217 / 20%); }
 .chat-markdown :where(*, *::before, *::after) { box-shadow: none !important; }
 .chat-markdown :where(.group:hover img, [style*="transition"]:hover) { transform: none !important; }
 
-/* Keep the playground preview aligned with the package surfaces even when
-   Next's CSS graph does not inline styles imported from the source package. */
-.chat-markdown :where(.rich-block-frame) {
-  position: relative;
-  border: 0;
-  border-radius: 1.375rem;
-  background: #fff;
-}
-.chat-markdown :where(.rich-block-card) {
-  border: 0;
-  border-radius: 1.125rem;
-  background: #fbfbfa;
-}
-.chat-markdown :where(.rich-block-eyebrow) { color: #85898f; font-size: .68rem; font-weight: 650; letter-spacing: .115em; line-height: 1.4; text-transform: uppercase; }
-.chat-markdown :where(.rich-block-title) { color: #151719; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.025em; line-height: 1.35; }
-.chat-markdown :where(.rich-block-copy) { color: #5f6368; font-size: .875rem; letter-spacing: -.006em; line-height: 1.65; }
-.chat-markdown :where(.rich-media-embed) { margin-block: 1.75rem; overflow: hidden; padding: 1.5rem; }
-.chat-markdown :where(.rich-media-embed-layout) { display: grid; align-items: center; gap: 1.25rem; grid-template-columns: auto minmax(0, 1fr) auto; }
-.chat-markdown :where(.rich-media-embed-icon) { display: flex; width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; border-radius: .95rem; background: rgb(79 99 217 / 9%); color: #4f63d9; }
-.chat-markdown :where(.rich-media-embed-action) { display: inline-flex; height: 2.5rem; align-items: center; justify-content: center; gap: .5rem; border-radius: .85rem; background: #151719; padding-inline: 1rem; color: #fff; font-size: .75rem; font-weight: 650; line-height: 1; }
-.chat-markdown :where(.rich-media-embed-action):hover { background: #35383b; }
-.chat-markdown :where(.rich-explore-surface) { padding-top: .3rem; }
-.chat-markdown :where(.rich-explore-tabs) { display: flex; gap: .35rem; overflow-x: auto; border-radius: 1.35rem; background: #f1f2f0; padding: .4rem; }
-.chat-markdown :where(.rich-explore-tab) { min-height: 2.8rem; flex: 1 0 auto; border-radius: 1rem; padding-inline: 1.1rem; color: #85898f; font-size: .875rem; font-weight: 600; letter-spacing: -.012em; }
-.chat-markdown :where(.rich-explore-tab.is-active) { background: #fff; color: #151719; }
-.chat-markdown :where(.rich-explore-panel) { max-width: 44rem; padding: 1.35rem 1.5rem .45rem; }
-.chat-markdown :where(.rich-explore-copy) { margin: 0; font-size: .95rem; line-height: 1.7; }
-.chat-markdown :where(.rich-highlights-grid) { display: grid; gap: .5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.chat-markdown :where(.rich-highlight-card) { min-height: 10rem; border-radius: 1.4rem; padding: 1.5rem; background: #f8f8f7; }
-.chat-markdown :where(.rich-highlight-card:nth-child(2)) { background: #f5f7ff; }
-
 .chat-markdown .katex-display {
   max-width: 100%;
   overflow-x: auto;
@@ -169,9 +138,4 @@ textarea::selection { background: rgb(79 99 217 / 20%); }
 }
 
 @media (max-width: 639px) {
-  .chat-markdown :where(.rich-block-frame) { border-radius: 1.125rem; }
-  .chat-markdown :where(.rich-media-embed) { padding: 1.25rem; }
-  .chat-markdown :where(.rich-media-embed-layout) { grid-template-columns: auto minmax(0, 1fr); }
-  .chat-markdown :where(.rich-media-embed-action) { grid-column: 1 / -1; width: 100%; }
-  .chat-markdown :where(.rich-highlights-grid) { grid-template-columns: 1fr; }
 }

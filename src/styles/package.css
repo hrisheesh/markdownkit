@@ -120,6 +120,19 @@
   line-height: 1.65;
 }
 
+.markdown-render :where(.rich-block-fallback) {
+  border: 0;
+  border-radius: 1.125rem;
+  background: color-mix(in srgb, white 90%, var(--color-surface-soft));
+  color: var(--color-slate);
+}
+.markdown-render :where(.rich-block-fallback-label) { margin: 0; color: var(--color-steel); font-size: .68rem; font-weight: 650; letter-spacing: .1em; line-height: 1.4; text-transform: uppercase; }
+.markdown-render :where(.rich-block-fallback-copy) { margin-top: .65rem; font-size: .875rem; line-height: 1.65; }
+.markdown-render :where(.rich-block-fallback-copy p) { margin: .2rem 0; }
+.markdown-render :where(.rich-block-fallback-raw) { max-height: 14rem; margin: .75rem 0 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-slate); font: .78rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.markdown-render :where(.rich-block-fallback-reason) { margin: .75rem 0 0; color: var(--color-steel); font-size: .75rem; line-height: 1.5; }
+.markdown-render :where(.rich-block-empty) { color: var(--color-steel); }
+
 .markdown-render :where(.rich-media-embed) {
   margin-block: 1.75rem;
   overflow: hidden;
